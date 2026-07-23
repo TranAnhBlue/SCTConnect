@@ -10,6 +10,7 @@ import { AdminProcedureScreen } from '../screens/Feedback/AdminProcedureScreen';
 import { FeedbackMapScreen } from '../screens/Feedback/FeedbackMapScreen';
 import { CreateReportScreen } from '../screens/Feedback/CreateReportScreen';
 import { ReportDetailScreen } from '../screens/Feedback/ReportDetailScreen';
+import { LoginScreen } from '../screens/Auth/LoginScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -24,6 +25,13 @@ export const RootNavigator: React.FC = () => {
       >
         {/* Main bottom tabs */}
         <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
+
+        {/* Auth flow */}
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ animation: 'slide_from_bottom' }}
+        />
 
         {/* Feedback flow */}
         <Stack.Screen name="FeedbackMenu" component={FeedbackMenuScreen} />

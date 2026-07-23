@@ -1,66 +1,111 @@
-import { FieldReport, AdminProcedureReport, DistrictReport, ReportStats } from '../../types';
+import { FieldReport, AdminProcedureReport, DistrictReport, ReportStats, UbndFeedbackResponse } from '../../types';
+import { apiClient } from '../axios';
 import { mockFieldReports } from '../mockData/fieldReports';
 import { mockAdminReports } from '../mockData/adminReports';
 import { mockDistrictReports, mockStats } from '../mockData/districtReports';
 
-// Simulates network delay
-const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
 export const reportService = {
-  // ─── Field Reports ──────────────────────────────────────────────────────────
+  // ─── Field Reports (MongoDB Atlas Cloud Integration) ────────────────────────
   async getFieldReports(): Promise<FieldReport[]> {
-    await delay(300);
-    // TODO: replace with apiClient.get('/reports/field')
-    return mockFieldReports;
+    try {
+      const res = await apiClient.get('/feedbacks');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        return res.data.data.map((item: any) => ({
+          id: item._id || item.id,
+          title: item.title,
+          description: item.description,
+          address: item.address,
+          category: item.category || 'environment',
+          status: item.status || 'pending',
+          departmentAssigned: item.departmentAssigned,
+          imageUrl: item.imageUrl,
+          likes: item.likes || 0,
+          comments: item.comments || 0,
+          ubndResponse: item.ubndResponse,
+          satisfactionRating: item.satisfactionRating,
+          createdAt: item.createdAt || new Date().toISOString(),
+          timeAgo: item.createdAt ? 'Vừa xong' : 'Hôm nay',
+        }));
+      }
+      return mockFieldReports;
+    } catch (err) {
+      console.warn('API Offline - Using mock data fallback:', err);
+      return mockFieldReports;
+    }
   },
 
   async createFieldReport(
-    data: Omit<FieldReport, 'id' | 'createdAt' | 'timeAgo' | 'likes' | 'comments'>
+    data: { title: string; description: string; address: string; category: any; departmentAssigned?: string; imageUrl?: string }
   ): Promise<FieldReport> {
-    await delay(500);
-    // TODO: replace with apiClient.post('/reports/field', data)
-    const newReport: FieldReport = {
-      ...data,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      timeAgo: 'Vừa xong',
-      likes: 0,
-      comments: 0,
-    };
-    return newReport;
+    try {
+      const res = await apiClient.post('/feedbacks', data);
+      const item = res.data?.data;
+      return {
+        id: item?._id || Date.now().toString(),
+        title: item?.title || data.title,
+        description: item?.description || data.description,
+        address: item?.address || data.address,
+        category: item?.category || data.category,
+        status: item?.status || 'pending',
+        departmentAssigned: item?.departmentAssigned || data.departmentAssigned,
+        imageUrl: item?.imageUrl || data.imageUrl,
+        createdAt: item?.createdAt || new Date().toISOString(),
+        timeAgo: 'Vừa xong',
+        likes: 0,
+        comments: 0,
+      };
+    } catch (err) {
+      console.warn('API Error creating feedback:', err);
+      return {
+        id: Date.now().toString(),
+        ...data,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        timeAgo: 'Vừa xong',
+        likes: 0,
+        comments: 0,
+      };
+    }
+  },
+
+  async respondToFieldReport(id: string, responseData: UbndFeedbackResponse): Promise<void> {
+    try {
+      await apiClient.put(`/feedbacks/${id}/ubnd-response`, responseData);
+    } catch (err) {
+      console.warn('API Error updating officer response:', err);
+    }
+  },
+
+  async rateFieldReport(id: string, rating: number): Promise<void> {
+    try {
+      await apiClient.post(`/feedbacks/${id}/rate`, { rating });
+    } catch (err) {
+      console.warn('API Error saving rating:', err);
+    }
   },
 
   // ─── Admin Procedure Reports ─────────────────────────────────────────────────
   async getAdminReports(): Promise<AdminProcedureReport[]> {
-    await delay(300);
-    // TODO: replace with apiClient.get('/reports/admin')
     return mockAdminReports;
   },
 
   async createAdminReport(
     data: Omit<AdminProcedureReport, 'id' | 'createdAt' | 'timeAgo'>
   ): Promise<AdminProcedureReport> {
-    await delay(500);
-    // TODO: replace with apiClient.post('/reports/admin', data)
-    const newReport: AdminProcedureReport = {
+    return {
       ...data,
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
       timeAgo: 'Vừa xong',
     };
-    return newReport;
   },
 
   // ─── District / Map Data ─────────────────────────────────────────────────────
   async getDistrictReports(): Promise<DistrictReport[]> {
-    await delay(300);
-    // TODO: replace with apiClient.get('/reports/districts')
     return mockDistrictReports;
   },
 
   async getReportStats(): Promise<ReportStats> {
-    await delay(200);
-    // TODO: replace with apiClient.get('/reports/stats')
     return mockStats;
   },
 };

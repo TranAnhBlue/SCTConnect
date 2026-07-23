@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { FieldReport, AdminProcedureReport, ReportStats } from '../types';
+import { FieldReport, AdminProcedureReport, ReportStats, UbndFeedbackResponse } from '../types';
 import { reportService } from '../api/services/reportService';
+import { mockFieldReports } from '../api/mockData/fieldReports';
 
 interface ReportState {
   fieldReports: FieldReport[];
@@ -10,14 +11,14 @@ interface ReportState {
   error: string | null;
 
   fetchFieldReports: () => Promise<void>;
-  fetchAdminReports: () => Promise<void>;
-  fetchStats: () => Promise<void>;
-  addFieldReport: (data: Omit<FieldReport, 'id' | 'createdAt' | 'timeAgo' | 'likes' | 'comments'>) => Promise<void>;
+  createReport: (title: string, description: string, address: string, category: any, departmentAssigned?: string, imageUrl?: string) => Promise<FieldReport>;
+  respondToReport: (id: string, response: UbndFeedbackResponse) => Promise<void>;
+  rateReport: (id: string, rating: number) => Promise<void>;
   clearError: () => void;
 }
 
 export const useReportStore = create<ReportState>((set, get) => ({
-  fieldReports: [],
+  fieldReports: mockFieldReports,
   adminReports: [],
   stats: null,
   isLoading: false,
@@ -26,46 +27,63 @@ export const useReportStore = create<ReportState>((set, get) => ({
   fetchFieldReports: async () => {
     set({ isLoading: true, error: null });
     try {
-      const data = await reportService.getFieldReports();
-      set({ fieldReports: data });
+      const reports = await reportService.getFieldReports();
+      set({ fieldReports: reports });
     } catch (e: any) {
-      set({ error: e.message || 'Lỗi tải dữ liệu' });
+      set({ error: e.message || 'Lỗi tải danh sách phản ánh' });
     } finally {
       set({ isLoading: false });
     }
   },
 
-  fetchAdminReports: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const data = await reportService.getAdminReports();
-      set({ adminReports: data });
-    } catch (e: any) {
-      set({ error: e.message || 'Lỗi tải dữ liệu' });
-    } finally {
-      set({ isLoading: false });
-    }
+  createReport: async (title, description, address, category, departmentAssigned, imageUrl) => {
+    const data = {
+      title,
+      description,
+      address,
+      category: category || 'environment',
+      departmentAssigned: departmentAssigned || 'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã',
+      imageUrl: imageUrl || 'https://picsum.photos/seed/new_report/400/250',
+    };
+
+    // Save to Cloud Database via API
+    const newReport = await reportService.createFieldReport(data);
+
+    set((state) => ({
+      fieldReports: [newReport, ...state.fieldReports],
+    }));
+
+    return newReport;
   },
 
-  fetchStats: async () => {
-    try {
-      const data = await reportService.getReportStats();
-      set({ stats: data });
-    } catch (e: any) {
-      set({ error: e.message });
-    }
+  respondToReport: async (id, response) => {
+    // 1. Optimistic update
+    set((state) => ({
+      fieldReports: state.fieldReports.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              status: 'done',
+              ubndResponse: response,
+            }
+          : r
+      ),
+    }));
+
+    // 2. Persist dispatch to Cloud MongoDB
+    await reportService.respondToFieldReport(id, response);
   },
 
-  addFieldReport: async (data) => {
-    set({ isLoading: true, error: null });
-    try {
-      const newReport = await reportService.createFieldReport(data);
-      set((state) => ({ fieldReports: [newReport, ...state.fieldReports] }));
-    } catch (e: any) {
-      set({ error: e.message || 'Không thể tạo phản ánh' });
-    } finally {
-      set({ isLoading: false });
-    }
+  rateReport: async (id, rating) => {
+    // 1. Optimistic update
+    set((state) => ({
+      fieldReports: state.fieldReports.map((r) =>
+        r.id === id ? { ...r, satisfactionRating: rating } : r
+      ),
+    }));
+
+    // 2. Persist 5-star rating to Cloud MongoDB
+    await reportService.rateFieldReport(id, rating);
   },
 
   clearError: () => set({ error: null }),

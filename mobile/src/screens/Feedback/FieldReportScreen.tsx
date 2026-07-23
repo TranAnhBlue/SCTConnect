@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, FieldReport, ReportCategory, ReportStatus } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
-import { mockFieldReports } from '../../api/mockData';
+import { useReportStore } from '../../store/reportStore';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
@@ -69,11 +69,16 @@ export const FieldReportScreen: React.FC<Props> = ({ navigation }) => {
   const [activeCategory, setActiveCategory] = useState<ReportCategory | 'all'>('all');
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const fieldReports = useReportStore((state) => state.fieldReports);
+
+  useEffect(() => {
+    useReportStore.getState().fetchFieldReports();
+  }, []);
 
   const filtered = useMemo(() => {
     let list = activeCategory === 'all'
-      ? mockFieldReports
-      : mockFieldReports.filter(r => r.category === activeCategory);
+      ? fieldReports
+      : fieldReports.filter(r => r.category === activeCategory);
     if (searchText.trim()) {
       list = list.filter(r =>
         r.title.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -81,7 +86,7 @@ export const FieldReportScreen: React.FC<Props> = ({ navigation }) => {
       );
     }
     return list;
-  }, [activeCategory, searchText]);
+  }, [activeCategory, searchText, fieldReports]);
 
   return (
     <SafeAreaView style={styles.safe}>

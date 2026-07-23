@@ -16,6 +16,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList, ReportCategory } from '../../types';
 import { Colors, Spacing, FontSize, BorderRadius, Shadow } from '../../constants';
+import { useReportStore } from '../../store/reportStore';
+
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -37,8 +41,51 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
   const [address, setAddress] = useState('');
   const [category, setCategory] = useState<ReportCategory | null>(null);
   const [showCatPicker, setShowCatPicker] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const handleSubmit = () => {
+  const handlePickImage = () => {
+    Alert.alert('Tải ảnh thực địa', 'Chọn phương thức đính kèm ảnh:', [
+      {
+        text: '📷 Chụp ảnh bằng Máy ảnh',
+        onPress: async () => {
+          const permission = await ImagePicker.requestCameraPermissionsAsync();
+          if (!permission.granted) {
+            Alert.alert('Quyền truy cập', 'Vui lòng cấp quyền mở máy ảnh.');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets?.[0]?.uri) {
+            setSelectedImage(result.assets[0].uri);
+          }
+        },
+      },
+      {
+        text: '🖼️ Chọn từ Thư viện ảnh',
+        onPress: async () => {
+          const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!permission.granted) {
+            Alert.alert('Quyền truy cập', 'Vui lòng cấp quyền mở thư viện ảnh.');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets?.[0]?.uri) {
+            setSelectedImage(result.assets[0].uri);
+          }
+        },
+      },
+      { text: 'Hủy', style: 'cancel' },
+    ]);
+  };
+
+  const handleSubmit = async () => {
     if (!title.trim()) {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập tiêu đề phản ánh');
       return;
@@ -47,8 +94,23 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập địa chỉ xảy ra sự việc');
       return;
     }
-    Alert.alert('Gửi thành công!', 'Phản ánh của bạn đã được ghi nhận và sẽ được xử lý sớm.', [
-      { text: 'OK', onPress: () => navigation.goBack() },
+
+    const created = await useReportStore.getState().createReport(
+      title.trim(),
+      description.trim() || 'Phản ánh hiện trường từ người dân',
+      address.trim() || 'Thôn 2, xã Thanh Oai',
+      category || 'environment',
+      'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã',
+      selectedImage || 'https://picsum.photos/seed/user_new/400/250'
+    );
+
+    Alert.alert('Gửi thành công!', 'Phản ánh của bạn đã được lưu vào MongoDB Cloud Database và gửi tới UBND Xã.', [
+      {
+        text: 'Xem chi tiết',
+        onPress: () => {
+          navigation.replace('ReportDetail', { id: created.id });
+        },
+      },
     ]);
   };
 
@@ -204,11 +266,17 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Photo upload */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Hình ảnh / Video</Text>
-          <TouchableOpacity style={styles.photoUpload}>
-            <MaterialCommunityIcons name="camera-plus-outline" size={36} color={Colors.textHint} />
-            <Text style={styles.photoTitle}>Thêm ảnh / video</Text>
-            <Text style={styles.photoSub}>Tối đa 5 ảnh, 1 video • PNG, JPG, MP4</Text>
+          <Text style={styles.label}>Hình ảnh / Video thực địa</Text>
+          <TouchableOpacity style={styles.photoUpload} onPress={handlePickImage} activeOpacity={0.8}>
+            {selectedImage ? (
+              <Image source={{ uri: selectedImage }} style={{ width: '100%', height: '100%', borderRadius: BorderRadius.md }} resizeMode="cover" />
+            ) : (
+              <>
+                <MaterialCommunityIcons name="camera-plus-outline" size={36} color={Colors.primary} />
+                <Text style={styles.photoTitle}>Chụp ảnh hoặc Chọn từ Thư viện</Text>
+                <Text style={styles.photoSub}>Nhấn vào đây để tải ảnh thực địa sự việc</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 

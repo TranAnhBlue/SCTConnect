@@ -6,6 +6,7 @@ export type RootStackParamList = {
   FeedbackMap: undefined;
   CreateReport: { type: 'field' | 'admin' };
   ReportDetail: { id: string };
+  Login: undefined;
 };
 
 export type BottomTabParamList = {

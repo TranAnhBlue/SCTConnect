@@ -19,31 +19,80 @@ import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants
 import { AppBar, StatusBadge, CategoryChip } from '../../components/common';
 import { mockFieldReports } from '../../api/mockData/fieldReports';
 import { FieldReport, UbndFeedbackResponse } from '../../types';
+import { useAuthStore } from '../../store/authStore';
+import { useReportStore } from '../../store/reportStore';
+
+import * as ImagePicker from 'expo-image-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReportDetail'>;
 
 export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id } = route.params;
+  const { user } = useAuthStore();
+  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
 
-  // Local state initialized with mock data
-  const initialReport = mockFieldReports.find((r) => r.id === id) || mockFieldReports[0];
-  const [report, setReport] = useState<FieldReport>(initialReport);
+  // Live store report
+  const fieldReports = useReportStore((state) => state.fieldReports);
+  const report = fieldReports.find((r) => r.id === id) || fieldReports[0];
   const [userRating, setUserRating] = useState<number>(report.satisfactionRating || 0);
 
   // Officer modal state
   const [officerModalVisible, setOfficerModalVisible] = useState(false);
-  const [officerName, setOfficerName] = useState('Cán bộ Nguyễn Văn A');
-  const [officerDept, setOfficerDept] = useState('Bộ phận Địa chính - Xây dựng UBND Xã');
-  const [docNumber, setDocNumber] = useState('Số 105/TB-UBND');
+  const [officerName, setOfficerName] = useState(user?.fullName || 'Cán bộ Nguyễn Văn Minh');
+  const [officerDept, setOfficerDept] = useState(user?.department || 'Bộ phận Địa chính - Xây dựng UBND Xã');
+  const [docNumber, setDocNumber] = useState('Số 108/TB-UBND');
   const [responseText, setResponseText] = useState('');
+  const [proofImage, setProofImage] = useState<string | null>(null);
 
-  const handleRate = (rating: number) => {
-    setUserRating(rating);
-    setReport((prev: FieldReport) => ({ ...prev, satisfactionRating: rating }));
-    Alert.alert('Cảm ơn bạn!', `Bạn đã đánh giá ${rating} sao cho kết quả xử lý của UBND Xã.`);
+  const handlePickProofImage = () => {
+    Alert.alert('Tải ảnh thực địa minh chứng', 'Chọn phương thức đính kèm ảnh:', [
+      {
+        text: '📷 Chụp ảnh bằng Máy ảnh',
+        onPress: async () => {
+          const permission = await ImagePicker.requestCameraPermissionsAsync();
+          if (!permission.granted) {
+            Alert.alert('Quyền truy cập', 'Vui lòng cấp quyền mở máy ảnh.');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets?.[0]?.uri) {
+            setProofImage(result.assets[0].uri);
+          }
+        },
+      },
+      {
+        text: '🖼️ Chọn từ Thư viện ảnh',
+        onPress: async () => {
+          const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!permission.granted) {
+            Alert.alert('Quyền truy cập', 'Vui lòng cấp quyền mở thư viện ảnh.');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets?.[0]?.uri) {
+            setProofImage(result.assets[0].uri);
+          }
+        },
+      },
+      { text: 'Hủy', style: 'cancel' },
+    ]);
   };
 
-  const handleSaveOfficerResponse = () => {
+  const handleRate = async (rating: number) => {
+    setUserRating(rating);
+    await useReportStore.getState().rateReport(report.id, rating);
+    Alert.alert('Cảm ơn bạn!', `Bạn đã đánh giá ${rating} sao cho kết quả xử lý của UBND Xã và thông tin đã được lưu vào Database.`);
+  };
+
+  const handleSaveOfficerResponse = async () => {
     if (!responseText.trim()) {
       Alert.alert('Chưa nhập nội dung', 'Vui lòng nhập nội dung phản hồi của UBND Xã.');
       return;
@@ -55,17 +104,13 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       officialContent: responseText.trim(),
       documentNumber: docNumber.trim(),
       responseDate: new Date().toLocaleString('vi-VN'),
-      resultImageUrl: 'https://picsum.photos/seed/fixed/300/200',
+      resultImageUrl: proofImage || 'https://picsum.photos/seed/fixed/400/250',
     };
 
-    setReport((prev: FieldReport) => ({
-      ...prev,
-      status: 'done',
-      ubndResponse: newResponse,
-    }));
+    await useReportStore.getState().respondToReport(report.id, newResponse);
 
     setOfficerModalVisible(false);
-    Alert.alert('Thành công', 'Đã cập nhật văn bản & ý kiến phản hồi từ UBND Xã.');
+    Alert.alert('Thành công!', `Đã ban hành văn bản ${docNumber.trim()} và lưu trực tiếp vào Database MongoDB Cloud.`);
   };
 
   // Timeline step calculation
@@ -215,31 +260,33 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               )}
             </View>
 
-            {/* Citizen Rating Section */}
-            <View style={styles.ratingSection}>
-              <Text style={styles.ratingTitle}>Đánh giá mức độ hài lòng với kết quả xử lý:</Text>
-              <View style={styles.starsRow}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    onPress={() => handleRate(star)}
-                    activeOpacity={0.7}
-                    style={{ padding: 4 }}
-                  >
-                    <MaterialCommunityIcons
-                      name={star <= userRating ? 'star' : 'star-outline'}
-                      size={28}
-                      color={star <= userRating ? '#FBC02D' : '#BDBDBD'}
-                    />
-                  </TouchableOpacity>
-                ))}
+            {/* Citizen Rating Section (Exclusively for Citizens when a response exists) */}
+            {!isOfficer && (
+              <View style={styles.ratingSection}>
+                <Text style={styles.ratingTitle}>Đánh giá mức độ hài lòng với kết quả xử lý của UBND Xã:</Text>
+                <View style={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity
+                      key={star}
+                      onPress={() => handleRate(star)}
+                      activeOpacity={0.7}
+                      style={{ padding: 4 }}
+                    >
+                      <MaterialCommunityIcons
+                        name={star <= userRating ? 'star' : 'star-outline'}
+                        size={28}
+                        color={star <= userRating ? '#FBC02D' : '#BDBDBD'}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {userRating > 0 && (
+                  <Text style={styles.ratingStatus}>
+                    Cảm ơn bạn đã đánh giá ({userRating}/5 sao)!
+                  </Text>
+                )}
               </View>
-              {userRating > 0 && (
-                <Text style={styles.ratingStatus}>
-                  Cảm ơn bạn đã đánh giá ({userRating}/5 sao)!
-                </Text>
-              )}
-            </View>
+            )}
           </View>
         ) : (
           <View style={styles.pendingResponseCard}>
@@ -251,15 +298,19 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         )}
 
-        {/* Action Button for Commune Officers */}
-        <TouchableOpacity
-          style={styles.officerBtn}
-          onPress={() => setOfficerModalVisible(true)}
-          activeOpacity={0.85}
-        >
-          <MaterialCommunityIcons name="badge-account-horizontal" size={20} color="#FFF" />
-          <Text style={styles.officerBtnText}>Dành cho Cán bộ UBND Xã: Cập nhật phản hồi</Text>
-        </TouchableOpacity>
+        {/* Action Button Exclusively for Commune Officers */}
+        {isOfficer && (
+          <TouchableOpacity
+            style={styles.officerBtn}
+            onPress={() => setOfficerModalVisible(true)}
+            activeOpacity={0.85}
+          >
+            <MaterialCommunityIcons name="badge-account-horizontal" size={20} color="#FFF" />
+            <Text style={styles.officerBtnText}>
+              {report.ubndResponse ? 'Cập nhật lại Văn bản chỉ đạo' : 'Ban hành Văn bản Phản hồi Người dân'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Officer Response Modal Sheet */}
@@ -311,6 +362,18 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 placeholder="Nhập chi tiết nội dung chỉ đạo, biện pháp xử lý hoặc lịch trình khắc phục..."
                 multiline
               />
+
+              <Text style={styles.inputLabel}>Ảnh minh chứng xử lý thực địa:</Text>
+              <TouchableOpacity style={styles.proofPhotoBtn} onPress={handlePickProofImage} activeOpacity={0.8}>
+                {proofImage ? (
+                  <Image source={{ uri: proofImage }} style={{ width: '100%', height: 120, borderRadius: 8 }} />
+                ) : (
+                  <View style={styles.proofPhotoBox}>
+                    <MaterialCommunityIcons name="camera-plus" size={24} color={Colors.primary} />
+                    <Text style={styles.proofPhotoText}>Chụp ảnh hoặc chọn từ Thư viện</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.submitModalBtn}
@@ -512,6 +575,27 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.textPrimary,
     backgroundColor: Colors.background,
+  },
+  proofPhotoBtn: {
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+  },
+  proofPhotoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderStyle: 'dashed',
+    backgroundColor: '#F4F8FF',
+  },
+  proofPhotoText: {
+    fontSize: FontSize.xs,
+    fontWeight: '700',
+    color: Colors.primary,
   },
   submitModalBtn: {
     flexDirection: 'row',

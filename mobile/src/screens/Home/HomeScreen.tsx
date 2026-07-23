@@ -15,6 +15,8 @@ import { RootStackParamList } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 import { BannerCarousel, ServiceGrid, NewServicesRow } from '../../components/home';
 import { ServiceItem } from '../../api/mockData';
+import { useAuthStore } from '../../store/authStore';
+import { OfficerHomeScreen } from './OfficerHomeScreen';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,6 +25,13 @@ interface Props {
 }
 
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
+  const { user } = useAuthStore();
+  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+
+  if (isOfficer) {
+    return <OfficerHomeScreen navigation={navigation} />;
+  }
+
   const handleServicePress = (service: ServiceItem) => {
     if (service.screen) {
       navigation.navigate(service.screen as any);
