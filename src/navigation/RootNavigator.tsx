@@ -9,6 +9,7 @@ import { FieldReportScreen } from '../screens/Feedback/FieldReportScreen';
 import { AdminProcedureScreen } from '../screens/Feedback/AdminProcedureScreen';
 import { FeedbackMapScreen } from '../screens/Feedback/FeedbackMapScreen';
 import { CreateReportScreen } from '../screens/Feedback/CreateReportScreen';
+import { ReportDetailScreen } from '../screens/Feedback/ReportDetailScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -34,6 +35,7 @@ export const RootNavigator: React.FC = () => {
           options={{ animation: 'slide_from_bottom' }}
         />
         <Stack.Screen name="CreateReport" component={CreateReportScreen} />
+        <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

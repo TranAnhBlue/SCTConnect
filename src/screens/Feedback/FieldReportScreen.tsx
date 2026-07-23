@@ -144,7 +144,7 @@ export const FieldReportScreen: React.FC<Props> = ({ navigation }) => {
         renderItem={({ item }) => (
           <ReportCard
             item={item}
-            onPress={() => {/* navigate to detail */}}
+            onPress={() => navigation.navigate('ReportDetail', { id: item.id })}
           />
         )}
         contentContainerStyle={styles.list}

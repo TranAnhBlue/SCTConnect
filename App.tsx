@@ -1,13 +1,20 @@
 import 'react-native-gesture-handler';
-import React from 'react';
+import React, { useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { SplashScreen } from './src/components/common/SplashScreen';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
     <GestureHandlerRootView style={styles.root}>
-      <RootNavigator />
+      {showSplash ? (
+        <SplashScreen onFinish={() => setShowSplash(false)} />
+      ) : (
+        <RootNavigator />
+      )}
     </GestureHandlerRootView>
   );
 }

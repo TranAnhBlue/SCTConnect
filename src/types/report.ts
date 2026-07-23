@@ -8,6 +8,15 @@ export type ReportCategory =
   | 'environment'
   | 'traffic';
 
+export interface UbndFeedbackResponse {
+  officerName: string;
+  department: string;
+  officialContent: string;
+  documentNumber?: string;
+  responseDate: string;
+  resultImageUrl?: string;
+}
+
 export interface FieldReport {
   id: string;
   title: string;
@@ -20,6 +29,9 @@ export interface FieldReport {
   timeAgo: string;
   likes: number;
   comments: number;
+  departmentAssigned?: string;
+  ubndResponse?: UbndFeedbackResponse;
+  satisfactionRating?: number;
 }
 
 export interface AdminProcedureReport {

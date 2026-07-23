@@ -150,6 +150,43 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         )}
 
+        {/* Field: Commune Department */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Đơn vị tiếp nhận tại UBND Xã</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+            {[
+              'Địa chính - Xây dựng',
+              'Môi trường & Hạ tầng',
+              'Công an Xã',
+              'Tư pháp - Hộ tịch',
+              'Văn hóa - Xã hội',
+              'Lãnh đạo UBND Xã',
+            ].map((dept, index) => (
+              <View
+                key={index}
+                style={{
+                  backgroundColor: index === 0 ? '#E3F2FD' : '#F5F5F5',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: index === 0 ? Colors.primary : Colors.border,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: index === 0 ? Colors.primary : Colors.textSecondary,
+                    fontWeight: index === 0 ? '700' : '500',
+                  }}
+                >
+                  {dept}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Field: description */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Nội dung mô tả</Text>

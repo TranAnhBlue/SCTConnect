@@ -7,7 +7,7 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Platform,
+  Image,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -38,13 +38,17 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.avatarBox}>
-              <MaterialCommunityIcons name="city-variant" size={20} color={Colors.primary} />
+              <Image
+                source={require('../../../assets/logo.png') as any}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <View>
-              <Text style={styles.cityName}>Thành phố Hà Nội</Text>
+              <Text style={styles.cityName}>SCTConnect - UBND Xã</Text>
               <View style={styles.weatherRow}>
                 <MaterialCommunityIcons name="weather-sunny" size={13} color="#FDD835" />
-                <Text style={styles.weatherText}>36°C</Text>
+                <Text style={styles.weatherText}>36°C • Hà Nội</Text>
               </View>
             </View>
           </View>
@@ -111,12 +115,18 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   avatarBox: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    padding: 2,
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   cityName: {
     fontSize: FontSize.lg,
