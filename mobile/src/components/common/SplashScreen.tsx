@@ -68,7 +68,7 @@ export const SplashScreen: React.FC<Props> = ({ onFinish }) => {
         />
 
         <Text style={styles.appName}>SCTConnect</Text>
-        <Text style={styles.appSubTitle}>Hệ Thống Quản Lý & Tương Tác UBND Xã</Text>
+        <Text style={styles.appSubTitle}>MẶT TRẬN TỔ QUỐC XÃ</Text>
       </Animated.View>
 
       <View style={styles.footer}>

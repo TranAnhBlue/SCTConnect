@@ -19,7 +19,7 @@ export const AccountScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isAuthenticated, user, logout } = useAuthStore();
 
-  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+  const isOfficer = !!(user?.role && user.role !== 'citizen');
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -36,8 +36,8 @@ export const AccountScreen: React.FC = () => {
         <Text style={styles.name}>{isAuthenticated ? user?.fullName : 'Khách'}</Text>
         <Text style={styles.email}>
           {isAuthenticated
-            ? (isOfficer ? `Cán bộ: ${user?.department}` : `Số ĐT: ${user?.phone} • ${user?.commune}`)
-            : 'Đăng nhập để gửi phản ánh & nhận thông báo từ UBND Xã'}
+            ? (isOfficer ? `${user?.titleName || 'Lãnh đạo Mặt trận'}: ${user?.department || 'Cơ quan MTTQ Xã'}` : `Số ĐT: ${user?.phone} • ${user?.commune || 'Xã Thanh Oai'}`)
+            : 'Đăng nhập để gửi phản ánh & nhận thông báo từ Mặt trận Tổ quốc'}
         </Text>
 
         {isAuthenticated && (
@@ -48,7 +48,7 @@ export const AccountScreen: React.FC = () => {
               color={isOfficer ? '#D32F2F' : Colors.primary}
             />
             <Text style={[styles.roleBadgeText, { color: isOfficer ? '#D32F2F' : Colors.primary }]}>
-              {isOfficer ? 'Cán Bộ UBND Xã' : 'Công Dân Đã Xác Thực'}
+              {isOfficer ? (user?.titleName || 'Lãnh Đạo Mặt Trận Tổ Quốc') : 'Công Dân Đã Xác Thực'}
             </Text>
           </View>
         )}

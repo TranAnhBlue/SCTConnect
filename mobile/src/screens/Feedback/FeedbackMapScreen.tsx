@@ -8,6 +8,7 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -226,10 +227,49 @@ export const FeedbackMapScreen: React.FC<Props> = ({ navigation }) => {
           }
         />
       ) : (
-        <View style={styles.mapPlaceholder}>
-          <MaterialCommunityIcons name="map" size={72} color={Colors.border} />
-          <Text style={styles.mapText}>Bản đồ sẽ được tích hợp</Text>
-          <Text style={styles.mapSub}>react-native-maps khi có BE</Text>
+        <View style={styles.mapContainer}>
+          {/* Simulated Interactive Map Grid */}
+          <View style={styles.mapCanvas}>
+            <MaterialCommunityIcons name="map-legend" size={24} color="#1565C0" style={styles.mapLegendIcon} />
+            <Text style={styles.mapTitleHeader}>BẢN ĐỒ THỰC ĐỊA PHẢN ÁNH - XÃ THANH OAI</Text>
+
+            {/* Map Pin 1 */}
+            <TouchableOpacity
+              style={[styles.mapPin, { top: '25%', left: '20%' }]}
+              onPress={() => Alert.alert('📍 Thôn 1 - Xã Thanh Oai', 'Có 14 phản ánh (2 chờ xử lý, 12 đã hoàn thành).')}
+            >
+              <View style={[styles.pinBubble, { backgroundColor: '#D32F2F' }]}>
+                <Text style={styles.pinText}>Thôn 1 (14)</Text>
+              </View>
+              <MaterialCommunityIcons name="map-marker" size={32} color="#D32F2F" />
+            </TouchableOpacity>
+
+            {/* Map Pin 2 */}
+            <TouchableOpacity
+              style={[styles.mapPin, { top: '45%', left: '60%' }]}
+              onPress={() => Alert.alert('📍 Thôn 2 - Xã Thanh Oai', 'Có 28 phản ánh (5 chờ xử lý, 23 đã hoàn thành).')}
+            >
+              <View style={[styles.pinBubble, { backgroundColor: '#E65100' }]}>
+                <Text style={styles.pinText}>Thôn 2 (28)</Text>
+              </View>
+              <MaterialCommunityIcons name="map-marker" size={32} color="#E65100" />
+            </TouchableOpacity>
+
+            {/* Map Pin 3 */}
+            <TouchableOpacity
+              style={[styles.mapPin, { top: '65%', left: '35%' }]}
+              onPress={() => Alert.alert('📍 Khố Phố Chợ - Xã Thanh Oai', 'Có 42 phản ánh (1 chờ xử lý, 41 đã hoàn thành).')}
+            >
+              <View style={[styles.pinBubble, { backgroundColor: '#2E7D32' }]}>
+                <Text style={styles.pinText}>Phố Chợ (42)</Text>
+              </View>
+              <MaterialCommunityIcons name="map-marker" size={32} color="#2E7D32" />
+            </TouchableOpacity>
+
+            <View style={styles.mapFooterNote}>
+              <Text style={styles.mapFooterText}>💡 Chạm vào các ghim địa bàn để xem chi tiết kiến nghị từng khu vực</Text>
+            </View>
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -363,4 +403,40 @@ const styles = StyleSheet.create({
   mapSub: { fontSize: FontSize.sm, color: Colors.textHint },
   empty: { flex: 1, alignItems: 'center', paddingTop: 60, gap: Spacing.md },
   emptyText: { fontSize: FontSize.base, color: Colors.textHint },
+
+  /* Map Canvas Styles */
+  mapContainer: { flex: 1, padding: Spacing.base },
+  mapCanvas: {
+    flex: 1,
+    backgroundColor: '#E8F1F5',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 2,
+    borderColor: '#B0BEC5',
+    position: 'relative',
+    overflow: 'hidden',
+    alignItems: 'center',
+    paddingTop: Spacing.md,
+  },
+  mapLegendIcon: { position: 'absolute', top: 12, right: 12 },
+  mapTitleHeader: { fontSize: 11, fontWeight: '800', color: '#1565C0', letterSpacing: 0.5 },
+  mapPin: { position: 'absolute', alignItems: 'center' },
+  pinBubble: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginBottom: -4,
+    ...Shadow.sm,
+  },
+  pinText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
+  mapFooterNote: {
+    position: 'absolute',
+    bottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  mapFooterText: { fontSize: 10, color: Colors.textSecondary, fontWeight: '600' },
 });

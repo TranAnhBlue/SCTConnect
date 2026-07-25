@@ -2,10 +2,18 @@ export type ReportStatus = 'pending' | 'processing' | 'done' | 'rejected';
 
 export type ReportCategory =
   | 'all'
+  | 'supervision'
+  | 'welfare'
+  | 'ethnicity_religion'
+  | 'youth_field'
+  | 'women_field'
+  | 'veterans_field'
+  | 'union_field'
+  | 'farmer_field'
   | 'security'
+  | 'environment'
   | 'construction'
   | 'civilization'
-  | 'environment'
   | 'traffic';
 
 export interface UbndFeedbackResponse {

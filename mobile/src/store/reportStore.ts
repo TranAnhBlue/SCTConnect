@@ -36,18 +36,20 @@ export const useReportStore = create<ReportState>((set, get) => ({
     }
   },
 
-  createReport: async (title, description, address, category, departmentAssigned, imageUrl) => {
+  createReport: async (title, description, address, category, departmentAssigned, imageUrl, targetOrganization) => {
     const data = {
       title,
       description,
       address,
-      category: category || 'environment',
-      departmentAssigned: departmentAssigned || 'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã',
+      category: category || 'supervision',
+      departmentAssigned: departmentAssigned || 'Ban Thường trực Ủy ban MTTQ Xã',
+      targetOrganization: targetOrganization || 'mttq',
       imageUrl: imageUrl || 'https://picsum.photos/seed/new_report/400/250',
     };
 
     // Save to Cloud Database via API
     const newReport = await reportService.createFieldReport(data);
+    (newReport as any).targetOrganization = data.targetOrganization;
 
     set((state) => ({
       fieldReports: [newReport, ...state.fieldReports],

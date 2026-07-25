@@ -26,7 +26,7 @@ interface Props {
 
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuthStore();
-  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+  const isOfficer = user?.role && user.role !== 'citizen';
 
   if (isOfficer) {
     return <OfficerHomeScreen navigation={navigation} />;
@@ -54,7 +54,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
               />
             </View>
             <View>
-              <Text style={styles.cityName}>SCTConnect - UBND Xã</Text>
+              <Text style={styles.cityName}>SCTConnect - MẶT TRẬN TỔ QUỐC XÃ</Text>
               <View style={styles.weatherRow}>
                 <MaterialCommunityIcons name="weather-sunny" size={13} color="#FDD835" />
                 <Text style={styles.weatherText}>36°C • Hà Nội</Text>

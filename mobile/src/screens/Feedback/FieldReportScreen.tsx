@@ -21,11 +21,16 @@ type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
 const CATEGORIES: { key: ReportCategory | 'all'; label: string }[] = [
   { key: 'all', label: 'Tất cả' },
-  { key: 'security', label: 'An ninh trật tự' },
-  { key: 'construction', label: 'Trật tự xây dựng' },
-  { key: 'civilization', label: 'Văn minh đô thị' },
-  { key: 'environment', label: 'Môi trường' },
-  { key: 'traffic', label: 'Giao thông' },
+  { key: 'supervision', label: '🏛️ Giám sát & Phản biện' },
+  { key: 'welfare', label: '🌺 An sinh & Cứu trợ' },
+  { key: 'ethnicity_religion', label: '🕊️ Dân tộc & Tôn giáo' },
+  { key: 'youth_field', label: '🚩 Đoàn Thanh niên' },
+  { key: 'women_field', label: '👩 Hội Phụ nữ' },
+  { key: 'veterans_field', label: '🎖️ Hội Cựu chiến binh' },
+  { key: 'union_field', label: '🛠️ Công đoàn' },
+  { key: 'farmer_field', label: '🌾 Hội Nông dân' },
+  { key: 'environment', label: '🌿 Môi trường' },
+  { key: 'security', label: '👮 An ninh' },
 ];
 
 const STATUS_DOT: Record<ReportStatus, string> = {
@@ -50,6 +55,21 @@ const ReportCard: React.FC<{ item: FieldReport; onPress: () => void }> = ({ item
         <MaterialCommunityIcons name="map-marker-outline" size={11} color={Colors.textHint} />
         {' '}{item.address}
       </Text>
+
+      {item.ubndResponse ? (
+        <View style={styles.responseNoticeTag}>
+          <MaterialCommunityIcons name="bell-ring" size={12} color="#2E7D32" />
+          <Text style={styles.responseNoticeText}>
+            MTTQ ĐÃ PHẢN HỒI: {item.ubndResponse.documentNumber || 'Đã xử lý xong'}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.pendingNoticeTag}>
+          <MaterialCommunityIcons name="clock-outline" size={12} color="#E65100" />
+          <Text style={styles.pendingNoticeText}>Mặt trận đang tiếp nhận & xử lý</Text>
+        </View>
+      )}
+
       <View style={styles.cardFooter}>
         <Text style={styles.timeAgo}>{item.timeAgo}</Text>
         <View style={styles.likesRow}>
@@ -266,6 +286,38 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   cardAddress: { fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 16 },
+  responseNoticeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+  },
+  responseNoticeText: {
+    fontSize: 10,
+    color: '#2E7D32',
+    fontWeight: '700',
+  },
+  pendingNoticeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF3E0',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+  },
+  pendingNoticeText: {
+    fontSize: 10,
+    color: '#E65100',
+    fontWeight: '600',
+  },
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
   timeAgo: { fontSize: FontSize.xs, color: Colors.textHint },
   likesRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

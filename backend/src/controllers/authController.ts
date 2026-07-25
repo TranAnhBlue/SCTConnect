@@ -15,7 +15,7 @@ export const registerUser = async (req: Request, res: Response) => {
       phone,
       email,
       role: role || 'citizen',
-      commune: commune || 'UBND Xã Thanh Oai',
+      commune: commune || 'Ủy ban MTTQ Việt Nam Xã Thanh Oai',
       department,
     });
 
@@ -36,7 +36,7 @@ export const loginUser = async (req: Request, res: Response) => {
         fullName: 'Người dân Hà Nội',
         phone,
         role: 'citizen',
-        commune: 'UBND Xã Thanh Oai',
+        commune: 'Ủy ban MTTQ Việt Nam Xã Thanh Oai',
         district: 'Huyện Thanh Oai',
       });
     }

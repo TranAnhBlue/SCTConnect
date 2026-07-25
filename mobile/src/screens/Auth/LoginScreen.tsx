@@ -41,8 +41,13 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     setTimeout(async () => {
       await login(phone, password, role);
       setIsLoading(false);
-      Alert.alert('Thành công!', `Xin chào ${role === 'officer' ? 'Cán bộ UBND Xã' : 'Công dân'}!`, [
-        { text: 'Bắt đầu sử dụng', onPress: () => navigation.goBack() },
+      Alert.alert('Thành công!', `Xin chào ${role === 'officer' ? 'Cán bộ Mặt Trận' : 'Công dân'}!`, [
+        {
+          text: 'Vào Bảng điều khiển',
+          onPress: () => {
+            navigation.popToTop();
+          },
+        },
       ]);
     }, 600);
   };
@@ -56,7 +61,12 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       await login('0912345678', '123456', 'citizen', 'Trần Anh (Công dân)');
       setIsLoading(false);
       Alert.alert('Đã đăng nhập!', 'Bạn đang sử dụng quyền Công Dân.', [
-        { text: 'Trải nghiệm ngay', onPress: () => navigation.goBack() },
+        {
+          text: 'Trải nghiệm ngay',
+          onPress: () => {
+            navigation.popToTop();
+          },
+        },
       ]);
     }, 500);
   };
@@ -67,10 +77,15 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     setPassword('123456');
     setIsLoading(true);
     setTimeout(async () => {
-      await login('0988123456', '123456', 'officer', 'Nguyễn Văn Minh (Cán bộ Xã)', 'Bộ phận Địa chính - Xây dựng & Đô thị');
+      await login('0988123456', '123456', 'officer', 'Nguyễn Văn Minh (Cán bộ Mặt trận)', 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã');
       setIsLoading(false);
-      Alert.alert('Đã đăng nhập!', 'Bạn đang sử dụng quyền Cán Bộ UBND Xã.', [
-        { text: 'Bắt đầu công tác', onPress: () => navigation.goBack() },
+      Alert.alert('Đã đăng nhập!', 'Bạn đang sử dụng quyền Cán Bộ Mặt Trận.', [
+        {
+          text: 'Bắt đầu công tác',
+          onPress: () => {
+            navigation.popToTop();
+          },
+        },
       ]);
     }, 500);
   };
@@ -96,8 +111,8 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>SCTConnect</Text>
-            <Text style={styles.appDesc}>Cổng Tiện Ích Đô Thị & Phản Ánh UBND Xã</Text>
+            <Text style={styles.appName}>SCTConnect - MẶT TRẬN TỔ QUỐC</Text>
+            <Text style={styles.appDesc}>Cổng Đại Đoàn Kết & Tiếp Nhận Ý Kiến Nhân Dân</Text>
           </View>
 
           {/* Role Switcher Tabs */}
@@ -128,7 +143,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 color={role === 'officer' ? '#FFFFFF' : Colors.textSecondary}
               />
               <Text style={[styles.roleTabText, role === 'officer' && styles.roleTabTextActive]}>
-                Cán Bộ UBND Xã
+                Cán Bộ Mặt Trận
               </Text>
             </TouchableOpacity>
           </View>
@@ -142,8 +157,8 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             />
             <Text style={[styles.roleInfoText, { color: role === 'officer' ? '#D32F2F' : Colors.primary }]}>
               {role === 'officer'
-                ? 'Giao diện dành riêng cho Cán bộ / Lãnh đạo UBND Xã tiếp nhận & trả lời phản ánh'
-                : 'Dành cho công dân gửi kiến nghị, tra cứu TTHC & theo dõi tiến độ giải quyết'}
+                ? 'Dành riêng cho Lãnh đạo MTTQ & 5 Tổ chức CT-XH (Đoàn TN, Phụ nữ, CCB, Công đoàn, Nông dân) tiếp nhận & xử lý kiến nghị'
+                : 'Dành cho nhân dân gửi kiến nghị Giám sát, An sinh xã hội & tương tác với Khối Đại đoàn kết'}
             </Text>
           </View>
 
@@ -210,7 +225,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 <>
                   <MaterialCommunityIcons name="login" size={20} color="#FFFFFF" />
                   <Text style={styles.submitText}>
-                    Đăng nhập vai trò {role === 'officer' ? 'Cán Bộ Xã' : 'Công Dân'}
+                    Đăng nhập vai trò {role === 'officer' ? 'Cán Bộ Mặt Trận' : 'Công Dân'}
                   </Text>
                 </>
               )}
@@ -219,16 +234,82 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Quick Demo Login Triggers */}
           <View style={styles.demoSection}>
-            <Text style={styles.demoTitle}>⚡ Thử nghiệm nhanh (Demo Login):</Text>
-            <View style={styles.demoRow}>
-              <TouchableOpacity style={styles.demoBtnCitizen} onPress={handleQuickLoginCitizen}>
-                <MaterialCommunityIcons name="account-check" size={16} color={Colors.primary} />
-                <Text style={styles.demoBtnTextCitizen}>Vào vai Công Dân</Text>
+            <Text style={styles.demoTitle}>🏛️ Chọn Vai trò Thử nghiệm (Mô hình MTTQ 2025):</Text>
+
+            <TouchableOpacity
+              style={styles.demoBtnCitizen}
+              onPress={async () => {
+                setIsLoading(true);
+                await login('0912345678', '123456', 'citizen', 'Trần Anh (Công dân)');
+                setIsLoading(false);
+                Alert.alert('Đăng nhập thành công!', 'Bạn đang dùng quyền Công dân / Đoàn viên / Hội viên.', [
+                  { text: 'Trải nghiệm ngay', onPress: () => navigation.popToTop() },
+                ]);
+              }}
+            >
+              <MaterialCommunityIcons name="account-check" size={16} color={Colors.primary} />
+              <Text style={styles.demoBtnTextCitizen}>👤 Công Dân / Đoàn viên / Hội viên</Text>
+            </TouchableOpacity>
+
+            <View style={styles.demoGrid}>
+              <TouchableOpacity
+                style={[styles.demoOrgBtn, { backgroundColor: '#FFEBEE', borderColor: '#FFCDD2' }]}
+                onPress={async () => {
+                  setIsLoading(true);
+                  await login('0988123456', '123456', 'mttq_president', 'Đồng chí Nguyễn Văn Minh', 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã', 'mttq', 'Chủ tịch Ủy ban MTTQ Xã');
+                  setIsLoading(false);
+                  Alert.alert('Đăng nhập thành công!', 'Quyền: Chủ tịch Ủy ban MTTQ Xã (Người đứng đầu Cơ quan).', [
+                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                  ]);
+                }}
+              >
+                <MaterialCommunityIcons name="shield-account" size={16} color="#B71C1C" />
+                <Text style={[styles.demoOrgText, { color: '#B71C1C' }]}>👑 Chủ tịch Ủy ban MTTQ</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.demoBtnOfficer} onPress={handleQuickLoginOfficer}>
-                <MaterialCommunityIcons name="shield-account" size={16} color="#D32F2F" />
-                <Text style={styles.demoBtnTextOfficer}>Vào vai Cán Bộ Xã</Text>
+              <TouchableOpacity
+                style={[styles.demoOrgBtn, { backgroundColor: '#E3F2FD', borderColor: '#BBDEFB' }]}
+                onPress={async () => {
+                  setIsLoading(true);
+                  await login('0988111222', '123456', 'youth_leader', 'Đồng chí Lê Hoàng Nam', 'Đoàn TNCS Hồ Chí Minh Xã', 'youth', 'Phó Chủ tịch MTTQ kiêm Bí thư Đoàn');
+                  setIsLoading(false);
+                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Bí thư Đoàn Thanh niên.', [
+                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                  ]);
+                }}
+              >
+                <MaterialCommunityIcons name="flag" size={16} color="#1565C0" />
+                <Text style={[styles.demoOrgText, { color: '#1565C0' }]}>🚩 Bí thư Đoàn Thanh niên</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.demoOrgBtn, { backgroundColor: '#FCE4EC', borderColor: '#F8BBD0' }]}
+                onPress={async () => {
+                  setIsLoading(true);
+                  await login('0988333444', '123456', 'women_leader', 'Đồng chí Phạm Thị Mai', 'Hội Liên hiệp Phụ nữ Xã', 'women', 'Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Phụ nữ');
+                  setIsLoading(false);
+                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Phụ nữ.', [
+                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                  ]);
+                }}
+              >
+                <MaterialCommunityIcons name="human-female" size={16} color="#C2185B" />
+                <Text style={[styles.demoOrgText, { color: '#C2185B' }]}>👩 Chủ tịch Hội Phụ nữ</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.demoOrgBtn, { backgroundColor: '#E8F5E9', borderColor: '#C8E6C9' }]}
+                onPress={async () => {
+                  setIsLoading(true);
+                  await login('0988555666', '123456', 'veteran_leader', 'Đồng chí Trần Văn Hùng', 'Hội Cựu chiến binh Xã', 'veterans', 'Phó Chủ tịch MTTQ kiêm Chủ tịch Hội CCB');
+                  setIsLoading(false);
+                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Cựu Chiến Binh.', [
+                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                  ]);
+                }}
+              >
+                <MaterialCommunityIcons name="medal" size={16} color="#2E7D32" />
+                <Text style={[styles.demoOrgText, { color: '#2E7D32' }]}>🎖️ Chủ tịch Hội Cựu chiến binh</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -374,6 +455,26 @@ const styles = StyleSheet.create({
   },
   demoBtnTextOfficer: { fontSize: FontSize.xs, color: '#D32F2F', fontWeight: '700' },
 
+  demoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginTop: 4,
+  },
+  demoOrgBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: 6,
+    width: '48%',
+  },
+  demoOrgText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   /* Footer */
   footerPrompt: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: Spacing.sm },
   footerText: { fontSize: FontSize.sm, color: Colors.textSecondary },

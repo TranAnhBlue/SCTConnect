@@ -4,6 +4,7 @@ export type RootStackParamList = {
   FieldReport: undefined;
   AdminProcedure: undefined;
   FeedbackMap: undefined;
+  CitizenReception: undefined;
   CreateReport: { type: 'field' | 'admin' };
   ReportDetail: { id: string };
   Login: undefined;

@@ -8,6 +8,7 @@ import { FeedbackMenuScreen } from '../screens/Feedback/FeedbackMenuScreen';
 import { FieldReportScreen } from '../screens/Feedback/FieldReportScreen';
 import { AdminProcedureScreen } from '../screens/Feedback/AdminProcedureScreen';
 import { FeedbackMapScreen } from '../screens/Feedback/FeedbackMapScreen';
+import { CitizenReceptionScreen } from '../screens/Feedback/CitizenReceptionScreen';
 import { CreateReportScreen } from '../screens/Feedback/CreateReportScreen';
 import { ReportDetailScreen } from '../screens/Feedback/ReportDetailScreen';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
@@ -42,6 +43,7 @@ export const RootNavigator: React.FC = () => {
           component={FeedbackMapScreen}
           options={{ animation: 'slide_from_bottom' }}
         />
+        <Stack.Screen name="CitizenReception" component={CitizenReceptionScreen} />
         <Stack.Screen name="CreateReport" component={CreateReportScreen} />
         <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
       </Stack.Navigator>

@@ -9,6 +9,7 @@ import communityRoutes from './routes/communityRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import messageRoutes from './routes/messageRoutes';
 import serviceRoutes from './routes/serviceRoutes';
+import citizenReceptionRoutes from './routes/citizenReceptionRoutes';
 
 dotenv.config();
 
@@ -27,7 +28,7 @@ app.get('/api/v1/health', (req: Request, res: Response) => {
   res.json({
     status: 'OK',
     server: 'SCTConnect Fullstack Backend API (Node.js + Express + MongoDB Atlas)',
-    modules: ['auth', 'feedbacks', 'community', 'notifications', 'messages', 'services'],
+    modules: ['auth', 'feedbacks', 'community', 'notifications', 'messages', 'services', 'receptions'],
     time: new Date().toISOString(),
   });
 });
@@ -39,6 +40,7 @@ app.use('/api/v1/posts', communityRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/messages', messageRoutes);
 app.use('/api/v1/services', serviceRoutes);
+app.use('/api/v1/receptions', citizenReceptionRoutes);
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: any) => {

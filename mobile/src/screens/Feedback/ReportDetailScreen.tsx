@@ -29,7 +29,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ReportDetail'>;
 export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { id } = route.params;
   const { user } = useAuthStore();
-  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+  const isOfficer = !!(user?.role && user.role !== 'citizen');
 
   // Live store report
   const fieldReports = useReportStore((state) => state.fieldReports);
@@ -38,11 +38,22 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   // Officer modal state
   const [officerModalVisible, setOfficerModalVisible] = useState(false);
-  const [officerName, setOfficerName] = useState(user?.fullName || 'Cán bộ Nguyễn Văn Minh');
-  const [officerDept, setOfficerDept] = useState(user?.department || 'Bộ phận Địa chính - Xây dựng UBND Xã');
-  const [docNumber, setDocNumber] = useState('Số 108/TB-UBND');
-  const [responseText, setResponseText] = useState('');
-  const [proofImage, setProofImage] = useState<string | null>(null);
+  const [officerName, setOfficerName] = useState(report.ubndResponse?.officerName || user?.fullName || 'Đồng chí Nguyễn Văn Minh');
+  const [officerDept, setOfficerDept] = useState(report.ubndResponse?.department || user?.titleName || user?.department || 'Ban Thường trực Ủy ban MTTQ Xã');
+  const [docNumber, setDocNumber] = useState(report.ubndResponse?.documentNumber || 'Số 108/TB-MTTQ');
+  const [responseText, setResponseText] = useState(report.ubndResponse?.officialContent || '');
+  const [proofImage, setProofImage] = useState<string | null>(report.ubndResponse?.resultImageUrl || null);
+
+  const handleOpenOfficerModal = () => {
+    if (report.ubndResponse) {
+      setOfficerName(report.ubndResponse.officerName || user?.fullName || 'Đồng chí Nguyễn Văn Minh');
+      setOfficerDept(report.ubndResponse.department || 'Ban Thường trực Ủy ban MTTQ Xã');
+      setDocNumber(report.ubndResponse.documentNumber || 'Số 108/TB-MTTQ');
+      setResponseText(report.ubndResponse.officialContent || '');
+      setProofImage(report.ubndResponse.resultImageUrl || null);
+    }
+    setOfficerModalVisible(true);
+  };
 
   const handlePickProofImage = () => {
     Alert.alert('Tải ảnh thực địa minh chứng', 'Chọn phương thức đính kèm ảnh:', [
@@ -89,12 +100,12 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const handleRate = async (rating: number) => {
     setUserRating(rating);
     await useReportStore.getState().rateReport(report.id, rating);
-    Alert.alert('Cảm ơn bạn!', `Bạn đã đánh giá ${rating} sao cho kết quả xử lý của UBND Xã và thông tin đã được lưu vào Database.`);
+    Alert.alert('Cảm ơn bạn!', `Bạn đã đánh giá ${rating} sao cho kết quả xử lý của MTTQ Xã và thông tin đã được lưu vào Database.`);
   };
 
   const handleSaveOfficerResponse = async () => {
     if (!responseText.trim()) {
-      Alert.alert('Chưa nhập nội dung', 'Vui lòng nhập nội dung phản hồi của UBND Xã.');
+      Alert.alert('Chưa nhập nội dung', 'Vui lòng nhập nội dung phản hồi của MTTQ Xã.');
       return;
     }
 
@@ -142,7 +153,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Timeline Tracking Header Card */}
         <View style={styles.timelineCard}>
-          <Text style={styles.timelineTitle}>Quy trình Tiếp nhận & Xử lý tại UBND Xã</Text>
+          <Text style={styles.timelineTitle}>Quy trình Tiếp nhận & Xử lý tại Mặt trận Tổ quốc Xã</Text>
           <View style={styles.stepContainer}>
             {/* Step 1 */}
             <View style={styles.stepItem}>
@@ -165,7 +176,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 />
               </View>
               <Text style={[styles.stepLabel, currentStep >= 2 && styles.stepLabelActive]}>
-                UBND Tiếp nhận
+                MTTQ Tiếp nhận
               </Text>
             </View>
             <View style={[styles.stepLine, currentStep >= 3 && styles.stepLineActive]} />
@@ -223,7 +234,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           )}
         </View>
 
-        {/* Official UBND Xã Response Section */}
+        {/* Official MTTQ Xã Response Section */}
         {report.ubndResponse ? (
           <View style={styles.responseCard}>
             <View style={styles.responseHeader}>
@@ -231,7 +242,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 <MaterialCommunityIcons name="shield-check" size={22} color="#D32F2F" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.responseHeaderTitle}>Ý kiến & Văn bản Phản hồi của UBND Xã</Text>
+                <Text style={styles.responseHeaderTitle}>Ý kiến & Văn bản Phản hồi của Mặt trận Tổ quốc Xã</Text>
                 <Text style={styles.responseDept}>{report.ubndResponse.department}</Text>
               </View>
             </View>
@@ -261,9 +272,9 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
 
             {/* Citizen Rating Section (Exclusively for Citizens when a response exists) */}
-            {!isOfficer && (
+            {!isOfficer ? (
               <View style={styles.ratingSection}>
-                <Text style={styles.ratingTitle}>Đánh giá mức độ hài lòng với kết quả xử lý của UBND Xã:</Text>
+                <Text style={styles.ratingTitle}>Đánh giá mức độ hài lòng với kết quả xử lý của MTTQ Xã:</Text>
                 <View style={styles.starsRow}>
                   {[1, 2, 3, 4, 5].map((star) => (
                     <TouchableOpacity
@@ -286,14 +297,27 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                   </Text>
                 )}
               </View>
+            ) : (
+              report.satisfactionRating && (
+                <View style={styles.officerRatingBadge}>
+                  <MaterialCommunityIcons name="star-circle" size={18} color="#F57F17" />
+                  <Text style={styles.officerRatingText}>
+                    Đánh giá từ Người dân: <Text style={{ fontWeight: '800' }}>{report.satisfactionRating}/5 sao ⭐</Text>
+                  </Text>
+                </View>
+              )
             )}
           </View>
         ) : (
           <View style={styles.pendingResponseCard}>
             <MaterialCommunityIcons name="progress-clock" size={32} color="#E65100" />
-            <Text style={styles.pendingTitle}>UBND Xã đang tiếp nhận & phân công xử lý</Text>
+            <Text style={styles.pendingTitle}>
+              {isOfficer ? 'Ý kiến / Phản ánh chưa được phản hồi' : 'Mặt trận đang tiếp nhận & phân công xử lý'}
+            </Text>
             <Text style={styles.pendingSub}>
-              Ý kiến của bạn đã được chuyển tới bộ phận chuyên môn. Kết quả & văn bản phản hồi sẽ được cập nhật tại đây.
+              {isOfficer
+                ? 'Đồng chí vui lòng nhấn nút bên dưới để soạn & ban hành Văn bản trả lời Người dân.'
+                : 'Ý kiến của bạn đã được chuyển tới bộ phận chuyên môn. Kết quả & văn bản phản hồi sẽ được cập nhật tại đây.'}
             </Text>
           </View>
         )}
@@ -302,7 +326,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         {isOfficer && (
           <TouchableOpacity
             style={styles.officerBtn}
-            onPress={() => setOfficerModalVisible(true)}
+            onPress={handleOpenOfficerModal}
             activeOpacity={0.85}
           >
             <MaterialCommunityIcons name="badge-account-horizontal" size={20} color="#FFF" />
@@ -323,7 +347,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Cập nhật Phản hồi của UBND Xã</Text>
+              <Text style={styles.modalTitle}>Cập nhật Phản hồi của Mặt trận Tổ quốc Xã</Text>
               <TouchableOpacity onPress={() => setOfficerModalVisible(false)}>
                 <MaterialCommunityIcons name="close" size={24} color={Colors.textPrimary} />
               </TouchableOpacity>
@@ -338,12 +362,12 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 placeholder="Nhập tên cán bộ..."
               />
 
-              <Text style={styles.inputLabel}>Bộ phận / Phòng ban Xã:</Text>
+              <Text style={styles.inputLabel}>Bộ phận / Phòng ban / Tổ chức:</Text>
               <TextInput
                 style={styles.textInput}
                 value={officerDept}
                 onChangeText={setOfficerDept}
-                placeholder="Nhập tên bộ phận..."
+                placeholder="Nhập tên tổ chức..."
               />
 
               <Text style={styles.inputLabel}>Số Văn bản / Thông báo (nếu có):</Text>
@@ -351,7 +375,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 style={styles.textInput}
                 value={docNumber}
                 onChangeText={setDocNumber}
-                placeholder="Ví dụ: Số 123/TB-UBND"
+                placeholder="Ví dụ: Số 123/TB-MTTQ"
               />
 
               <Text style={styles.inputLabel}>Nội dung trả lời & Kết quả xử lý:</Text>
@@ -518,6 +542,23 @@ const styles = StyleSheet.create({
   ratingTitle: { fontSize: FontSize.xs, fontWeight: '700', color: Colors.textPrimary },
   starsRow: { flexDirection: 'row' },
   ratingStatus: { fontSize: FontSize.xs, color: '#2E7D32', fontWeight: '700' },
+  officerRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FFF8E1',
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+    marginTop: Spacing.xs,
+  },
+  officerRatingText: {
+    fontSize: FontSize.xs,
+    color: '#F57F17',
+    fontWeight: '600',
+  },
 
   /* Pending Response */
   pendingResponseCard: {

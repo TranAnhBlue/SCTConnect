@@ -140,7 +140,7 @@ export const feedbackMenuItems: ServiceItem[] = [
     iconFamily: 'MaterialCommunityIcons',
     color: '#FFFFFF',
     backgroundColor: '#F9A825',
-    screen: undefined,
+    screen: 'CitizenReception',
   },
   {
     id: 'f4',

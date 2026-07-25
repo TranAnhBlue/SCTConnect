@@ -28,25 +28,45 @@ async function seedAllModules() {
     await ServiceModel.deleteMany({});
     console.log('Cleared all previous collections.');
 
-    // 2. Seed Users
+    // 2. Seed Users (Post-2025 MTTQ & Member Organizations Model)
     const users = await UserModel.insertMany([
       {
-        fullName: 'Nguyễn Văn Minh',
+        fullName: 'Đồng chí Nguyễn Văn Minh',
         phone: '0988123456',
-        email: 'minh.nguyen@ubnd.gov.vn',
-        role: 'officer',
-        department: 'Bộ phận Địa chính - Xây dựng & Đô thị',
-        commune: 'UBND Xã Thanh Oai',
+        email: 'minh.nguyen@mttq.gov.vn',
+        role: 'mttq_president',
+        department: 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
+        commune: 'Ủy ban MTTQ Xã Thanh Oai',
         district: 'Huyện Thanh Oai',
         isVerified: true,
       },
       {
-        fullName: 'Lê Hoàng Nam',
-        phone: '0977888999',
-        email: 'nam.le@ubnd.gov.vn',
-        role: 'admin',
-        department: 'Lãnh đạo UBND Xã',
-        commune: 'UBND Xã Thanh Oai',
+        fullName: 'Đồng chí Lê Hoàng Nam',
+        phone: '0988111222',
+        email: 'nam.le@doanthanhnien.vn',
+        role: 'youth_leader',
+        department: 'Đoàn TNCS Hồ Chí Minh Xã (PCT MTTQ kiêm nhiệm)',
+        commune: 'Ủy ban MTTQ Xã Thanh Oai',
+        district: 'Huyện Thanh Oai',
+        isVerified: true,
+      },
+      {
+        fullName: 'Đồng chí Phạm Thị Mai',
+        phone: '0988333444',
+        email: 'mai.pham@hoiphunu.vn',
+        role: 'women_leader',
+        department: 'Hội Liên hiệp Phụ nữ Xã (PCT MTTQ kiêm nhiệm)',
+        commune: 'Ủy ban MTTQ Xã Thanh Oai',
+        district: 'Huyện Thanh Oai',
+        isVerified: true,
+      },
+      {
+        fullName: 'Đồng chí Trần Văn Hùng',
+        phone: '0988555666',
+        email: 'hung.tran@cuuchienbinh.vn',
+        role: 'veteran_leader',
+        department: 'Hội Cựu chiến binh Xã (PCT MTTQ kiêm nhiệm)',
+        commune: 'Ủy ban MTTQ Xã Thanh Oai',
         district: 'Huyện Thanh Oai',
         isVerified: true,
       },
@@ -55,61 +75,75 @@ async function seedAllModules() {
         phone: '0912345678',
         email: 'trananh@citizen.vn',
         role: 'citizen',
-        commune: 'UBND Xã Thanh Oai',
+        commune: 'Ủy ban MTTQ Xã Thanh Oai',
         district: 'Huyện Thanh Oai',
         isVerified: true,
       },
     ]);
-    console.log(`✅ Seeded ${users.length} Users (Citizens, Officers, Admins).`);
+    console.log(`✅ Seeded ${users.length} Users (MTTQ Leadership & Member Org Leaders).`);
 
-    // 3. Seed Feedbacks
+    // 3. Seed Feedbacks (MTTQ Supervision, Welfare, Youth, Women, Veterans)
     const feedbacks = await FeedbackModel.insertMany([
       {
-        title: 'Nắp cống hỏng gây nguy hiểm cho người đi đường',
-        description: 'Nắp cống gãy nứt tại tuyến đường chính khu dân cư gây rủi ro tai nạn giao thông.',
-        address: 'Khu đất Dịch vụ 25,2ha Vân Canh, Hoài Đức, Hà Nội',
-        category: 'security',
-        status: 'processing',
-        departmentAssigned: 'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã',
-        imageUrl: 'https://picsum.photos/seed/1/400/250',
-        likes: 18,
-        comments: 5,
+        title: 'Kiến nghị Giám sát Công khai ngân sách Quỹ "Vì người nghèo" Quý 2/2026',
+        description: 'Đề nghị Ban Thường trực Ủy ban MTTQ Xã minh bạch danh sách các hộ dân được hỗ trợ xây dựng Mái ấm Đại đoàn kết đợt 1.',
+        address: 'Thôn 2, xã Thanh Oai, Hà Nội',
+        category: 'supervision',
+        targetOrganization: 'mttq',
+        status: 'done',
+        departmentAssigned: 'Ban Thường trực Ủy ban MTTQ Việt Nam Xã',
+        imageUrl: 'https://picsum.photos/seed/mttq_welfare/400/250',
+        likes: 42,
+        comments: 8,
+        satisfactionRating: 5,
         ubndResponse: {
-          officerName: 'Nguyễn Văn Minh',
-          department: 'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã',
-          officialContent: 'UBND Xã đã cử Cán bộ Địa chính xuống kiểm tra thực địa. Đã lập biên bản ghi nhận và đúc nắp đan bê tông thay thế.',
-          documentNumber: 'Số 89/TB-UBND',
-          responseDate: '23/07/2026 10:15',
+          officerName: 'Đồng chí Nguyễn Văn Minh (Chủ tịch Ủy ban MTTQ Xã)',
+          department: 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
+          officialContent: 'Ủy ban MTTQ Xã đã công khai minh bạch toàn bộ 15 hộ nghèo được hỗ trợ nhà Đại đoàn kết trên bảng tin và ứng dụng.',
+          documentNumber: 'Số 45/TB-MTTQ',
+          responseDate: '24/07/2026 14:30',
+          resultImageUrl: 'https://picsum.photos/seed/mttq_proof/400/250',
         },
       },
       {
-        title: 'Đề nghị UBND xã xử lý bãi rác tự phát bãi sông',
-        description: 'Khu vực sát đường giao thông hình thành bãi rác tự phát gây mất vệ sinh môi trường.',
-        address: 'Khu vực Chiến Chiện, xã Thanh Oai, Hà Nội',
-        category: 'environment',
-        status: 'done',
-        departmentAssigned: 'Bộ phận Tài nguyên Môi trường UBND Xã',
-        imageUrl: 'https://picsum.photos/seed/3/400/250',
-        likes: 62,
-        comments: 14,
-        satisfactionRating: 5,
+        title: 'Kiến nghị Đoàn Thanh niên hỗ trợ Chuyển đổi số & VNeID cho người cao tuổi',
+        description: 'Đề nghị Đội thanh niên xung kích cấp xã mở điểm hỗ trợ người già hướng dẫn kích hoạt tài khoản định danh điện tử.',
+        address: 'Nhà văn hóa thôn Chiến Chiện, xã Thanh Oai',
+        category: 'youth_field',
+        targetOrganization: 'youth',
+        status: 'processing',
+        departmentAssigned: 'Đoàn TNCS Hồ Chí Minh Xã (Khối MTTQ)',
+        imageUrl: 'https://picsum.photos/seed/youth_app/400/250',
+        likes: 85,
+        comments: 19,
         ubndResponse: {
-          officerName: 'Lê Hoàng Nam (Phó Chủ tịch UBND Xã)',
-          department: 'UBND Xã Thanh Oai',
-          officialContent: 'UBND Xã đã huy động lực lượng giải tỏa hoàn toàn bãi rác tự phát và lắp biển Cấm đổ rác cùng camera giám sát.',
-          documentNumber: 'Số 102/BC-UBND',
-          responseDate: '22/07/2026 16:45',
-          resultImageUrl: 'https://picsum.photos/seed/30/400/250',
+          officerName: 'Đồng chí Lê Hoàng Nam (PCT MTTQ kiêm Bí thư Đoàn Xã)',
+          department: 'BTV Đoàn Thanh niên Xã Thanh Oai',
+          officialContent: 'Đoàn Xã đã thành lập 5 Đội Tình nguyện Chuyển đổi số trực tại các Nhà văn hóa thôn vào thứ 7 và Chủ nhật hàng tuần.',
+          documentNumber: 'Số 18/KH-ĐTN',
+          responseDate: '25/07/2026 09:00',
         },
       },
+      {
+        title: 'Đề xuất Hội Phụ nữ nhân rộng mô hình "Gia đình 5 không 3 sạch"',
+        description: 'Đề nghị Hội Phụ nữ xã tập huấn phân loại rác thải tại nguồn và tặng thùng rác thân thiện môi trường cho hội viên.',
+        address: 'Xóm 4, xã Thanh Oai, Hà Nội',
+        category: 'women_field',
+        targetOrganization: 'women',
+        status: 'pending',
+        departmentAssigned: 'Hội Liên hiệp Phụ nữ Xã (Khối MTTQ)',
+        imageUrl: 'https://picsum.photos/seed/women_clean/400/250',
+        likes: 31,
+        comments: 4,
+      },
     ]);
-    console.log(`✅ Seeded ${feedbacks.length} Feedback & Response records.`);
+    console.log(`✅ Seeded ${feedbacks.length} MTTQ & Member Org Feedback records.`);
 
     // 4. Seed Posts & Citizen Polls
     const posts = await PostModel.insertMany([
       {
-        authorName: 'UBND Xã Thanh Oai',
-        authorRole: 'ubnd',
+        authorName: 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã Thanh Oai',
+        authorRole: 'officer',
         content: '📢 THÔNG BÁO VỀ VIỆC LẤY Ý KIẾN NHÂN DÂN: Kế hoạch mở rộng tuyến đường liên thôn năm 2026. Kính mời bà con nhân dân tham gia bình chọn ý kiến dưới đây.',
         category: 'poll',
         pollOptions: [
@@ -123,7 +157,7 @@ async function seedAllModules() {
       {
         authorName: 'Nguyễn Văn Hùng',
         authorRole: 'citizen',
-        content: 'Cảm ơn UBND Xã và các cán bộ đã kịp thời dọn dẹp điểm đen rác thải tại bãi sông! Môi trường khu dân cư đã sạch đẹp hơn rất nhiều.',
+        content: 'Cảm ơn Thường trực Mặt trận Xã và các đoàn thể đã kịp thời giám sát và dọn dẹp điểm đen rác thải tại bãi sông! Môi trường khu dân cư đã sạch đẹp hơn rất nhiều.',
         category: 'discussion',
         imageUrls: ['https://picsum.photos/seed/clean/400/250'],
         likesCount: 45,
@@ -135,8 +169,8 @@ async function seedAllModules() {
     // 5. Seed Notifications
     const notifications = await NotificationModel.insertMany([
       {
-        title: 'UBND Xã đã ban hành văn bản phản hồi',
-        body: 'Phản ánh "Nắp cống hỏng gây nguy hiểm" đã được UBND Xã tiếp nhận và ban hành Thông báo Số 89/TB-UBND.',
+        title: 'Mặt trận Tổ quốc Xã đã ban hành văn bản phản hồi',
+        body: 'Phản ánh "Nắp cống hỏng gây nguy hiểm" đã được Thường trực Mặt trận Xã tiếp nhận và ban hành Thông báo Số 89/TB-MTTQ.',
         type: 'ubnd_dispatch',
         isRead: false,
       },
@@ -155,16 +189,16 @@ async function seedAllModules() {
         senderId: 'citizen_1',
         senderName: 'Trần Anh',
         recipientId: 'officer_1',
-        recipientName: 'Cán bộ Nguyễn Văn Minh',
-        text: 'Dạ xin chào Cán bộ, tôi muốn hỏi về quy trình làm thủ tục sang tên sổ đỏ tại UBND Xã cần những tài liệu gì ạ?',
+        recipientName: 'Đ/c Nguyễn Văn Minh (Chủ tịch MTTQ Xã)',
+        text: 'Dạ xin chào Chủ tịch Mặt trận, tôi muốn hỏi về quy trình tham gia giám sát công trình đường liên thôn tại địa phương cần những tài liệu gì ạ?',
         isRead: true,
       },
       {
         senderId: 'officer_1',
-        senderName: 'Cán bộ Nguyễn Văn Minh',
+        senderName: 'Đ/c Nguyễn Văn Minh (Chủ tịch MTTQ Xã)',
         recipientId: 'citizen_1',
         recipientName: 'Trần Anh',
-        text: 'Chào bác Anh! Hồ sơ bao gồm: Đơn đăng ký biến động, Giấy chứng nhận quyền sử dụng đất bản gốc, CCCD gắn chip và Hợp đồng chuyển nhượng đã công chứng bác nhé.',
+        text: 'Chào bác Anh! Thường trực Mặt trận Xã rất hoan nghênh tinh thần giám sát cộng đồng của bác. Bác có thể tham gia Ban Giám sát Đầu tư Cộng đồng tại Thôn 2 bác nhé.',
         isRead: false,
       },
     ]);
@@ -174,7 +208,7 @@ async function seedAllModules() {
     const services = await ServiceModel.insertMany([
       {
         title: 'Phản ánh hiện trường',
-        description: 'Gửi phản ánh an ninh, môi trường, hạ tầng tới UBND Xã',
+        description: 'Gửi phản ánh an sinh, môi trường, hạ tầng tới Mặt trận Tổ quốc Xã',
         iconName: 'camera-plus-outline',
         category: 'public',
         screenRoute: 'FieldReport',
@@ -182,7 +216,7 @@ async function seedAllModules() {
       },
       {
         title: 'Phản ánh Thủ tục Hành chính',
-        description: 'Đóng góp ý kiến chất lượng giải quyết TTHC tại UBND Xã',
+        description: 'Đóng góp ý kiến chất lượng giải quyết TTHC tại Mặt trận Xã',
         iconName: 'file-document-outline',
         category: 'procedure',
         screenRoute: 'AdminProcedure',

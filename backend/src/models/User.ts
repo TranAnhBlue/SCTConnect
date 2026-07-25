@@ -5,7 +5,19 @@ export interface IUser extends Document {
   phone: string;
   email?: string;
   passwordHash?: string;
-  role: 'citizen' | 'officer' | 'admin';
+  role:
+    | 'citizen'
+    | 'officer'
+    | 'admin'
+    | 'mttq_president'
+    | 'mttq_vice_president'
+    | 'youth_leader'
+    | 'women_leader'
+    | 'veteran_leader'
+    | 'union_leader'
+    | 'farmer_leader';
+  organization?: 'mttq' | 'youth' | 'women' | 'veterans' | 'union' | 'farmers';
+  titleName?: string;
   department?: string;
   commune: string;
   district: string;
@@ -20,9 +32,30 @@ const UserSchema = new Schema<IUser>(
     phone: { type: String, required: true, unique: true },
     email: { type: String },
     passwordHash: { type: String },
-    role: { type: String, enum: ['citizen', 'officer', 'admin'], default: 'citizen' },
+    role: {
+      type: String,
+      enum: [
+        'citizen',
+        'officer',
+        'admin',
+        'mttq_president',
+        'mttq_vice_president',
+        'youth_leader',
+        'women_leader',
+        'veteran_leader',
+        'union_leader',
+        'farmer_leader',
+      ],
+      default: 'citizen',
+    },
+    organization: {
+      type: String,
+      enum: ['mttq', 'youth', 'women', 'veterans', 'union', 'farmers'],
+      default: 'mttq',
+    },
+    titleName: { type: String },
     department: { type: String },
-    commune: { type: String, default: 'UBND Xã Thanh Oai' },
+    commune: { type: String, default: 'Ủy ban MTTQ Xã Thanh Oai' },
     district: { type: String, default: 'Huyện Thanh Oai' },
     avatarUrl: { type: String, default: 'https://picsum.photos/seed/user_avatar/200/200' },
     isVerified: { type: Boolean, default: true },

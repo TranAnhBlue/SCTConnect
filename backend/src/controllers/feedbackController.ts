@@ -8,38 +8,38 @@ const mockFeedbacks = [
     title: 'Nắp cống hỏng gây nguy hiểm',
     description: 'Nắp cống bị hỏng gãy nứt gây mất an toàn giao thông cho người đi đường.',
     address: 'Khu đất Dịch vụ 25,2ha Vân Canh, Hoài Đức, Hà Nội',
-    category: 'security',
+    category: 'supervision',
     status: 'processing',
-    departmentAssigned: 'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã',
+    departmentAssigned: 'Ban Thường trực Ủy ban MTTQ Xã',
     imageUrl: 'https://picsum.photos/seed/1/300/200',
     likes: 15,
     comments: 4,
     ubndResponse: {
-      officerName: 'Nguyễn Văn Minh',
-      department: 'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã',
-      officialContent: 'UBND Xã đã cử Cán bộ Địa chính xuống kiểm tra thực địa. Đã lập biên bản ghi nhận và đúc nắp đan bê tông thay thế.',
-      documentNumber: 'Số 89/TB-UBND',
+      officerName: 'Nguyễn Văn Minh (Chủ tịch Ủy ban MTTQ Xã)',
+      department: 'Ban Thường trực Ủy ban MTTQ Xã',
+      officialContent: 'Mặt trận Xã đã cử Cán bộ giám sát kiểm tra thực địa và đôn đốc đúc nắp đan bê tông thay thế.',
+      documentNumber: 'Số 89/TB-MTTQ',
       responseDate: '23/07/2026 10:15',
     },
     createdAt: new Date().toISOString(),
   },
   {
     _id: '2',
-    title: 'Đề nghị UBND xã xử lý bãi rác tự phát',
+    title: 'Đề nghị Mặt trận xử lý bãi rác tự phát',
     description: 'Khu vực sát đường giao thông hình thành bãi rác tự phát gây mất vệ sinh môi trường.',
     address: 'Khu vực Chiến Chiện, xã Thanh Oai, Hà Nội',
     category: 'environment',
     status: 'done',
-    departmentAssigned: 'Bộ phận Tài nguyên Môi trường UBND Xã',
+    departmentAssigned: 'Đoàn Thanh niên CS Hồ Chí Minh (Khối MTTQ)',
     imageUrl: 'https://picsum.photos/seed/3/300/200',
     likes: 54,
     comments: 12,
     satisfactionRating: 5,
     ubndResponse: {
-      officerName: 'Lê Hoàng Nam (Phó Chủ tịch UBND Xã)',
-      department: 'UBND Xã Thanh Oai',
-      officialContent: 'UBND Xã đã huy động lực lượng giải tỏa hoàn toàn bãi rác tự phát và gắn biển Cấm đổ rác.',
-      documentNumber: 'Số 102/BC-UBND',
+      officerName: 'Lê Hoàng Nam (Bí thư Đoàn Thanh niên Xã)',
+      department: 'Ủy ban MTTQ & Các Đoàn thể Xã Thanh Oai',
+      officialContent: 'Đoàn Thanh niên phối hợp cùng MTTQ Xã đã huy động lực lượng giải tỏa hoàn toàn bãi rác tự phát và gắn biển Cấm đổ rác.',
+      documentNumber: 'Số 102/BC-MTTQ',
       responseDate: '22/07/2026 16:45',
       resultImageUrl: 'https://picsum.photos/seed/30/300/200',
     },
@@ -94,8 +94,8 @@ export const createFeedback = async (req: Request, res: Response) => {
       title,
       description,
       address,
-      category: category || 'environment',
-      departmentAssigned: departmentAssigned || 'Bộ phận Địa chính - Xây dựng UBND Xã',
+      category: category || 'supervision',
+      departmentAssigned: departmentAssigned || 'Ban Thường trực Ủy ban MTTQ Xã',
       imageUrl,
       status: 'pending',
     });
@@ -127,7 +127,7 @@ export const updateUbndResponse = async (req: Request, res: Response) => {
       { new: true }
     );
 
-    return res.json({ success: true, message: 'Đã cập nhật phản hồi của UBND Xã', data: updated });
+    return res.json({ success: true, message: 'Đã cập nhật phản hồi của Mặt trận Tổ quốc Xã', data: updated });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }

@@ -27,11 +27,16 @@ type Props = {
 };
 
 const CATEGORIES: { key: ReportCategory; label: string }[] = [
-  { key: 'security', label: 'An ninh trật tự' },
-  { key: 'construction', label: 'Trật tự xây dựng' },
-  { key: 'civilization', label: 'Văn minh đô thị' },
-  { key: 'environment', label: 'Môi trường' },
-  { key: 'traffic', label: 'Giao thông' },
+  { key: 'supervision', label: '🏛️ Dân chủ, Giám sát & Phản biện xã hội' },
+  { key: 'welfare', label: '🌺 An sinh xã hội & Quỹ "Vì người nghèo"' },
+  { key: 'ethnicity_religion', label: '🕊️ Dân tộc & Tôn giáo' },
+  { key: 'youth_field', label: '🚩 Phong trào Đoàn Thanh niên & Chuyển đổi số' },
+  { key: 'women_field', label: '👩 Mảng Phụ nữ, Gia đình 5 không 3 sạch' },
+  { key: 'veterans_field', label: '🎖️ Mảng Cựu chiến binh & Nghĩa tình đồng đội' },
+  { key: 'union_field', label: '🛠️ Mảng Công đoàn & Người lao động' },
+  { key: 'farmer_field', label: '🌾 Mảng Hội Nông dân & Nông thôn mới' },
+  { key: 'environment', label: '🌿 Vệ sinh môi trường & Đô thị' },
+  { key: 'security', label: '👮 An ninh trật tự khu dân cư' },
 ];
 
 export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
@@ -39,7 +44,8 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
-  const [category, setCategory] = useState<ReportCategory | null>(null);
+  const [category, setCategory] = useState<ReportCategory | null>('supervision');
+  const [targetOrg, setTargetOrg] = useState<string>('mttq');
   const [showCatPicker, setShowCatPicker] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -87,7 +93,7 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập tiêu đề phản ánh');
+      Alert.alert('Thiếu thông tin', 'Vui lòng nhập tiêu đề kiến nghị / phản ánh');
       return;
     }
     if (isField && !address.trim()) {
@@ -95,16 +101,26 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
       return;
     }
 
+    const deptMap: Record<string, string> = {
+      mttq: 'Ban Thường trực Ủy ban MTTQ Việt Nam Xã',
+      youth: 'Đoàn TNCS Hồ Chí Minh Xã (Khối MTTQ)',
+      women: 'Hội Liên hiệp Phụ nữ Xã (Khối MTTQ)',
+      veterans: 'Hội Cựu chiến binh Xã (Khối MTTQ)',
+      union: 'Công đoàn / LĐLĐ Xã (Khối MTTQ)',
+      farmers: 'Hội Nông dân Xã (Khối MTTQ)',
+    };
+
     const created = await useReportStore.getState().createReport(
       title.trim(),
-      description.trim() || 'Phản ánh hiện trường từ người dân',
+      description.trim() || 'Ý kiến phản ánh từ người dân tới Mặt trận Tổ quốc',
       address.trim() || 'Thôn 2, xã Thanh Oai',
-      category || 'environment',
-      'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã',
-      selectedImage || 'https://picsum.photos/seed/user_new/400/250'
+      category || 'supervision',
+      deptMap[targetOrg] || 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
+      selectedImage || 'https://picsum.photos/seed/user_new/400/250',
+      targetOrg
     );
 
-    Alert.alert('Gửi thành công!', 'Phản ánh của bạn đã được lưu vào MongoDB Cloud Database và gửi tới UBND Xã.', [
+    Alert.alert('Gửi thành công!', 'Ý kiến của bạn đã được tiếp nhận và lưu trực tiếp vào Database MongoDB Cloud.', [
       {
         text: 'Xem chi tiết',
         onPress: () => {
@@ -113,6 +129,15 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
       },
     ]);
   };
+
+  const ORGS = [
+    { key: 'mttq', label: '🏛️ Ủy ban MTTQ Xã' },
+    { key: 'youth', label: '🚩 Đoàn Thanh niên' },
+    { key: 'women', label: '👩 Hội Phụ nữ' },
+    { key: 'veterans', label: '🎖️ Hội Cựu chiến binh' },
+    { key: 'union', label: '🛠️ Công đoàn' },
+    { key: 'farmers', label: '🌾 Hội Nông dân' },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -212,40 +237,38 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* Field: Commune Department */}
+        {/* Field: Target Organization */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Đơn vị tiếp nhận tại UBND Xã</Text>
+          <Text style={styles.label}>Tổ chức / Cơ quan tiếp nhận thuộc Khối MTTQ</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
-            {[
-              'Địa chính - Xây dựng',
-              'Môi trường & Hạ tầng',
-              'Công an Xã',
-              'Tư pháp - Hộ tịch',
-              'Văn hóa - Xã hội',
-              'Lãnh đạo UBND Xã',
-            ].map((dept, index) => (
-              <View
-                key={index}
-                style={{
-                  backgroundColor: index === 0 ? '#E3F2FD' : '#F5F5F5',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: index === 0 ? Colors.primary : Colors.border,
-                }}
-              >
-                <Text
+            {ORGS.map((org) => {
+              const isSelected = targetOrg === org.key;
+              return (
+                <TouchableOpacity
+                  key={org.key}
+                  onPress={() => setTargetOrg(org.key)}
+                  activeOpacity={0.8}
                   style={{
-                    fontSize: 12,
-                    color: index === 0 ? Colors.primary : Colors.textSecondary,
-                    fontWeight: index === 0 ? '700' : '500',
+                    backgroundColor: isSelected ? '#E3F2FD' : '#F5F5F5',
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: isSelected ? Colors.primary : Colors.border,
                   }}
                 >
-                  {dept}
-                </Text>
-              </View>
-            ))}
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: isSelected ? Colors.primary : Colors.textSecondary,
+                      fontWeight: isSelected ? '700' : '500',
+                    }}
+                  >
+                    {org.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         </View>
 

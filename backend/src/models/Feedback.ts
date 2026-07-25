@@ -13,7 +13,21 @@ export interface IFeedback extends Document {
   title: string;
   description: string;
   address: string;
-  category: 'security' | 'construction' | 'civilization' | 'environment' | 'traffic';
+  category:
+    | 'supervision'
+    | 'welfare'
+    | 'ethnicity_religion'
+    | 'youth_field'
+    | 'women_field'
+    | 'veterans_field'
+    | 'union_field'
+    | 'farmer_field'
+    | 'security'
+    | 'environment'
+    | 'construction'
+    | 'civilization'
+    | 'traffic';
+  targetOrganization?: 'mttq' | 'youth' | 'women' | 'veterans' | 'union' | 'farmers';
   status: 'pending' | 'processing' | 'done' | 'rejected';
   imageUrl?: string;
   departmentAssigned?: string;
@@ -40,8 +54,12 @@ const FeedbackSchema = new Schema<IFeedback>(
     address: { type: String, required: true },
     category: {
       type: String,
-      enum: ['security', 'construction', 'civilization', 'environment', 'traffic'],
-      default: 'environment',
+      default: 'supervision',
+    },
+    targetOrganization: {
+      type: String,
+      enum: ['mttq', 'youth', 'women', 'veterans', 'union', 'farmers'],
+      default: 'mttq',
     },
     status: {
       type: String,
@@ -49,7 +67,7 @@ const FeedbackSchema = new Schema<IFeedback>(
       default: 'pending',
     },
     imageUrl: { type: String },
-    departmentAssigned: { type: String, default: 'Bộ phận Địa chính - Xây dựng & Đô thị UBND Xã' },
+    departmentAssigned: { type: String, default: 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã' },
     likes: { type: Number, default: 0 },
     comments: { type: Number, default: 0 },
     ubndResponse: { type: UbndResponseSchema },
