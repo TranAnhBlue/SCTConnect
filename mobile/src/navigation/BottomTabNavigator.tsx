@@ -11,6 +11,9 @@ import { CommunityScreen } from '../screens/Community/CommunityScreen';
 import { NotificationsScreen } from '../screens/Notifications/NotificationsScreen';
 import { AccountScreen } from '../screens/Account/AccountScreen';
 
+import { useAuthStore } from '../store/authStore';
+import { useNotificationStore } from '../store/notificationStore';
+
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 const TAB_CONFIG: Record<
@@ -25,6 +28,11 @@ const TAB_CONFIG: Record<
 };
 
 export const BottomTabNavigator: React.FC = () => {
+  const { user, isAuthenticated } = useAuthStore();
+  const unreadCount = useNotificationStore((state) =>
+    state.getUnreadCountForUser(user?.role, user?.organization, isAuthenticated)
+  );
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => {
@@ -53,7 +61,7 @@ export const BottomTabNavigator: React.FC = () => {
         name="Notifications"
         component={NotificationsScreen}
         options={{
-          tabBarBadge: 3,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: styles.badge,
         }}
       />

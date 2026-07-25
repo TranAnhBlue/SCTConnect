@@ -6,17 +6,19 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   Alert,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList, ReportCategory } from '../../types';
 import { Colors, Spacing, FontSize, BorderRadius, Shadow } from '../../constants';
 import { useReportStore } from '../../store/reportStore';
+import { useAuthStore } from '../../store/authStore';
+import { useNotificationStore } from '../../store/notificationStore';
 
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
@@ -135,6 +137,17 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
       user?.fullName || 'Trần Anh',
       user?.phone || '0912345678'
     );
+
+    // Trigger Notification for Receiving Officer
+    useNotificationStore.getState().addNotification({
+      title: '📩 Phản ánh mới từ Công dân',
+      message: `Công dân ${user?.fullName || 'Trần Anh'} vừa gửi phản ánh "${title.trim()}" tới ${deptMap[targetOrg] || 'Mặt trận Tổ quốc'}.`,
+      type: 'report_created',
+      targetRole: 'officer',
+      targetOrg: targetOrg as any,
+      senderName: user?.fullName || 'Trần Anh',
+      reportId: created.id,
+    });
 
     Alert.alert('Gửi thành công!', 'Ý kiến của bạn đã được tiếp nhận và lưu trực tiếp vào Database MongoDB Cloud.', [
       {

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   Image,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
@@ -21,6 +21,7 @@ import { mockFieldReports } from '../../api/mockData/fieldReports';
 import { FieldReport, UbndFeedbackResponse } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { useReportStore } from '../../store/reportStore';
+import { useNotificationStore } from '../../store/notificationStore';
 
 import * as ImagePicker from 'expo-image-picker';
 
@@ -111,6 +112,18 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
     setUserRating(rating);
     await useReportStore.getState().rateReport(report.id, rating);
+
+    // Trigger Notification for Receiving Officer
+    useNotificationStore.getState().addNotification({
+      title: '⭐ Đánh giá Mức độ Hài lòng',
+      message: `Công dân ${report.reporterName || 'Trần Anh'} vừa đánh giá ${rating}/5 sao ⭐ cho kết quả xử lý của đơn vị.`,
+      type: 'rating_received',
+      targetRole: 'officer',
+      targetOrg: (report as any).targetOrganization || 'mttq',
+      senderName: report.reporterName || 'Trần Anh',
+      reportId: report.id,
+    });
+
     Alert.alert('Cảm ơn bạn!', `Bạn đã đánh giá ${rating} sao cho kết quả xử lý của MTTQ Xã và thông tin đã được lưu vào Database.`);
   };
 
@@ -130,6 +143,16 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     };
 
     await useReportStore.getState().respondToReport(report.id, newResponse);
+
+    // Trigger Notification for Citizen
+    useNotificationStore.getState().addNotification({
+      title: '🏛️ Ban hành Văn bản Trả lời Phản ánh',
+      message: `Đồng chí ${officerName.trim()} (${officerDept.trim()}) đã ban hành Văn bản trả lời cho kiến nghị "${report.title}".`,
+      type: 'report_responded',
+      targetRole: 'citizen',
+      senderName: officerName.trim(),
+      reportId: report.id,
+    });
 
     setOfficerModalVisible(false);
     Alert.alert('Thành công!', `Đã ban hành văn bản ${docNumber.trim()} và lưu trực tiếp vào Database MongoDB Cloud.`);

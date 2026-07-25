@@ -5,10 +5,11 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Image,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
@@ -32,7 +33,23 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
     return <OfficerHomeScreen navigation={navigation} />;
   }
 
+  const promptLoginForGuest = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        '🔒 Yêu cầu Đăng nhập',
+        'Vui lòng đăng nhập tài khoản Công dân để sử dụng các tiện ích và dịch vụ của Mặt trận Tổ quốc.',
+        [
+          { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+          { text: 'Đóng', style: 'cancel' },
+        ]
+      );
+      return true;
+    }
+    return false;
+  };
+
   const handleServicePress = (service: ServiceItem) => {
+    if (promptLoginForGuest()) return;
     if (service.screen) {
       navigation.navigate(service.screen as any);
     }
@@ -61,7 +78,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             </View>
           </View>
-          <TouchableOpacity style={styles.searchBtn} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.searchBtn} activeOpacity={0.7} onPress={promptLoginForGuest}>
             <MaterialCommunityIcons name="magnify" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -89,7 +106,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Hotline */}
-        <TouchableOpacity style={styles.hotlineCard} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.hotlineCard} activeOpacity={0.8} onPress={promptLoginForGuest}>
           <View style={styles.hotlineIcon}>
             <MaterialCommunityIcons name="phone" size={18} color={Colors.primary} />
           </View>

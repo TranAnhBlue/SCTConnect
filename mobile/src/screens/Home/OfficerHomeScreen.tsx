@@ -5,16 +5,17 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 import { useAuthStore } from '../../store/authStore';
 import { useReportStore } from '../../store/reportStore';
+import { useNotificationStore } from '../../store/notificationStore';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -109,8 +110,11 @@ const ROLE_CONFIGS: Record<string, RoleThemeConfig> = {
 };
 
 export const OfficerHomeScreen: React.FC<Props> = ({ navigation }) => {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const fieldReports = useReportStore((state) => state.fieldReports);
+  const unreadCount = useNotificationStore((state) =>
+    state.getUnreadCountForUser(user?.role, user?.organization, isAuthenticated)
+  );
 
   // Determine specific role config
   const userOrgKey = user?.organization || (user?.role === 'youth_leader' ? 'youth' : user?.role === 'women_leader' ? 'women' : user?.role === 'veteran_leader' ? 'veterans' : user?.role === 'union_leader' ? 'union' : user?.role === 'farmer_leader' ? 'farmers' : 'mttq');
@@ -189,6 +193,35 @@ export const OfficerHomeScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.officerName}>{user?.fullName || 'Đồng chí Nguyễn Văn Minh'}</Text>
               <Text style={styles.officerDept}>{user?.titleName || roleConfig.roleTitle}</Text>
             </View>
+
+            {/* Notification Bell */}
+            <TouchableOpacity
+              style={{ position: 'relative', padding: 8 }}
+              onPress={() => navigation.navigate('Notifications')}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="bell-outline" size={26} color="#FFFFFF" />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    backgroundColor: '#FFEBEE',
+                    borderRadius: 10,
+                    minWidth: 18,
+                    height: 18,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 4,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#D32F2F' }}>
+                    {unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
 

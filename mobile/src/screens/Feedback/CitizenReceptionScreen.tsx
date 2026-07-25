@@ -4,13 +4,14 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
-  StatusBar,
   TouchableOpacity,
   TextInput,
+  StatusBar,
   Alert,
+  ActivityIndicator,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
@@ -178,6 +179,21 @@ export const CitizenReceptionScreen: React.FC<Props> = ({ navigation }) => {
     Alert.alert('Đăng ký thành công!', 'Phiếu đăng ký tiếp công dân của bạn đã được ghi nhận và lưu trực tiếp vào MongoDB Cloud Database.');
   };
 
+  const handleTabPress = (tab: 'schedule' | 'register' | 'my_registrations') => {
+    if (!isAuthenticated && tab !== 'schedule') {
+      Alert.alert(
+        '🔒 Yêu cầu Đăng nhập',
+        'Vui lòng đăng nhập tài khoản Công dân để thực hiện Đăng ký Lịch gặp Lãnh đạo hoặc Xem phiếu đã đăng ký.',
+        [
+          { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+          { text: 'Đóng', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+    setActiveTab(tab);
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#B71C1C" />
@@ -192,7 +208,7 @@ export const CitizenReceptionScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'schedule' && styles.tabItemActive]}
-          onPress={() => setActiveTab('schedule')}
+          onPress={() => handleTabPress('schedule')}
         >
           <Text style={[styles.tabText, activeTab === 'schedule' && styles.tabTextActive]}>
             Lịch Tiếp Định kỳ
@@ -201,7 +217,7 @@ export const CitizenReceptionScreen: React.FC<Props> = ({ navigation }) => {
 
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'register' && styles.tabItemActive]}
-          onPress={() => setActiveTab('register')}
+          onPress={() => handleTabPress('register')}
         >
           <Text style={[styles.tabText, activeTab === 'register' && styles.tabTextActive]}>
             Đăng ký Lịch gặp
@@ -210,7 +226,7 @@ export const CitizenReceptionScreen: React.FC<Props> = ({ navigation }) => {
 
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'my_registrations' && styles.tabItemActive]}
-          onPress={() => setActiveTab('my_registrations')}
+          onPress={() => handleTabPress('my_registrations')}
         >
           <Text style={[styles.tabText, activeTab === 'my_registrations' && styles.tabTextActive]}>
             {isOfficer ? `Phiếu chờ duyệt (${registrations.length})` : `Phiếu đã đăng ký (${registrations.length})`}

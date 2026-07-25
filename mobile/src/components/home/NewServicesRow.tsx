@@ -4,7 +4,33 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { newServices } from '../../api/mockData';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 
+import { useAuthStore } from '../../store/authStore';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types';
+import { Alert } from 'react-native';
+
 export const NewServicesRow: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isAuthenticated } = useAuthStore();
+
+  const handlePress = (screen?: string) => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        '🔒 Yêu cầu Đăng nhập',
+        'Vui lòng đăng nhập tài khoản Công dân để sử dụng các dịch vụ tiện ích mới.',
+        [
+          { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+          { text: 'Đóng', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+    if (screen) {
+      navigation.navigate(screen as any);
+    }
+  };
+
   return (
     <ScrollView
       horizontal
@@ -12,7 +38,7 @@ export const NewServicesRow: React.FC = () => {
       contentContainerStyle={styles.scroll}
     >
       {newServices.map(item => (
-        <TouchableOpacity key={item.id} style={styles.item} activeOpacity={0.75}>
+        <TouchableOpacity key={item.id} style={styles.item} activeOpacity={0.75} onPress={() => handlePress(item.screen)}>
           <View style={[styles.iconBox, { backgroundColor: item.backgroundColor }]}>
             <MaterialCommunityIcons name={item.iconName as any} size={26} color={item.color} />
             {item.isNew && (

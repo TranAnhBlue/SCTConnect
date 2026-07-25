@@ -93,10 +93,28 @@ const DistrictCard: React.FC<{ item: DistrictReport }> = ({ item }) => (
   </View>
 );
 
+import { useAuthStore } from '../../store/authStore';
+
 export const FeedbackMapScreen: React.FC<Props> = ({ navigation }) => {
+  const { isAuthenticated } = useAuthStore();
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+
+  const checkPinAuth = (title: string, msg: string) => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        '🔒 Yêu cầu Đăng nhập',
+        'Vui lòng đăng nhập tài khoản Công dân để xem thông tin chi tiết trên bản đồ phản ánh.',
+        [
+          { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+          { text: 'Đóng', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+    Alert.alert(title, msg);
+  };
 
   const filtered = mockDistrictReports.filter(d =>
     d.name.toLowerCase().includes(search.toLowerCase())
@@ -236,7 +254,7 @@ export const FeedbackMapScreen: React.FC<Props> = ({ navigation }) => {
             {/* Map Pin 1 */}
             <TouchableOpacity
               style={[styles.mapPin, { top: '25%', left: '20%' }]}
-              onPress={() => Alert.alert('📍 Thôn 1 - Xã Thanh Oai', 'Có 14 phản ánh (2 chờ xử lý, 12 đã hoàn thành).')}
+              onPress={() => checkPinAuth('📍 Thôn 1 - Xã Thanh Oai', 'Có 14 phản ánh (2 chờ xử lý, 12 đã hoàn thành).')}
             >
               <View style={[styles.pinBubble, { backgroundColor: '#D32F2F' }]}>
                 <Text style={styles.pinText}>Thôn 1 (14)</Text>
@@ -247,7 +265,7 @@ export const FeedbackMapScreen: React.FC<Props> = ({ navigation }) => {
             {/* Map Pin 2 */}
             <TouchableOpacity
               style={[styles.mapPin, { top: '45%', left: '60%' }]}
-              onPress={() => Alert.alert('📍 Thôn 2 - Xã Thanh Oai', 'Có 28 phản ánh (5 chờ xử lý, 23 đã hoàn thành).')}
+              onPress={() => checkPinAuth('📍 Thôn 2 - Xã Thanh Oai', 'Có 28 phản ánh (5 chờ xử lý, 23 đã hoàn thành).')}
             >
               <View style={[styles.pinBubble, { backgroundColor: '#E65100' }]}>
                 <Text style={styles.pinText}>Thôn 2 (28)</Text>
@@ -258,7 +276,7 @@ export const FeedbackMapScreen: React.FC<Props> = ({ navigation }) => {
             {/* Map Pin 3 */}
             <TouchableOpacity
               style={[styles.mapPin, { top: '65%', left: '35%' }]}
-              onPress={() => Alert.alert('📍 Khố Phố Chợ - Xã Thanh Oai', 'Có 42 phản ánh (1 chờ xử lý, 41 đã hoàn thành).')}
+              onPress={() => checkPinAuth('📍 Khố Phố Chợ - Xã Thanh Oai', 'Có 42 phản ánh (1 chờ xử lý, 41 đã hoàn thành).')}
             >
               <View style={[styles.pinBubble, { backgroundColor: '#2E7D32' }]}>
                 <Text style={styles.pinText}>Phố Chợ (42)</Text>

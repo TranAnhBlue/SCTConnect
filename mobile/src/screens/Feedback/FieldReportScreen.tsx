@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   TextInput,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, FieldReport, ReportCategory, ReportStatus } from '../../types';
@@ -171,7 +171,20 @@ export const FieldReportScreen: React.FC<Props> = ({ navigation }) => {
         renderItem={({ item }) => (
           <ReportCard
             item={item}
-            onPress={() => navigation.navigate('ReportDetail', { id: item.id })}
+            onPress={() => {
+              if (!isAuthenticated) {
+                Alert.alert(
+                  '🔒 Yêu cầu Đăng nhập',
+                  'Vui lòng đăng nhập tài khoản để xem chi tiết phản ánh và văn bản trả lời.',
+                  [
+                    { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+                    { text: 'Đóng', style: 'cancel' },
+                  ]
+                );
+                return;
+              }
+              navigation.navigate('ReportDetail', { id: item.id });
+            }}
           />
         )}
         contentContainerStyle={styles.list}
