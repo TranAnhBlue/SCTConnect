@@ -27,9 +27,9 @@ import * as ImagePicker from 'expo-image-picker';
 type Props = NativeStackScreenProps<RootStackParamList, 'ReportDetail'>;
 
 export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { id } = route.params;
-  const { user } = useAuthStore();
-  const isOfficer = !!(user?.role && user.role !== 'citizen');
+  const id = route?.params?.id || '1';
+  const { user, isAuthenticated } = useAuthStore();
+  const isOfficer = isAuthenticated && !!(user?.role && user.role !== 'citizen');
 
   // Live store report
   const fieldReports = useReportStore((state) => state.fieldReports);
@@ -98,6 +98,17 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   const handleRate = async (rating: number) => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Yêu cầu Đăng nhập',
+        'Vui lòng đăng nhập tài khoản để đánh giá mức độ hài lòng.',
+        [
+          { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+          { text: 'Đóng', style: 'cancel' },
+        ]
+      );
+      return;
+    }
     setUserRating(rating);
     await useReportStore.getState().rateReport(report.id, rating);
     Alert.alert('Cảm ơn bạn!', `Bạn đã đánh giá ${rating} sao cho kết quả xử lý của MTTQ Xã và thông tin đã được lưu vào Database.`);
@@ -215,6 +226,13 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text style={styles.addressText}>{report.address}</Text>
           </View>
 
+          <View style={styles.departmentBadge}>
+            <MaterialCommunityIcons name="account-circle-outline" size={15} color={Colors.primary} />
+            <Text style={styles.departmentText}>
+              Công dân gửi phản ánh: <Text style={{ fontWeight: '700', color: Colors.primary }}>{report.reporterName || 'Trần Anh'}</Text>
+            </Text>
+          </View>
+
           {report.departmentAssigned && (
             <View style={styles.departmentBadge}>
               <MaterialCommunityIcons name="office-building" size={15} color="#1565C0" />
@@ -302,7 +320,7 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 <View style={styles.officerRatingBadge}>
                   <MaterialCommunityIcons name="star-circle" size={18} color="#F57F17" />
                   <Text style={styles.officerRatingText}>
-                    Đánh giá từ Người dân: <Text style={{ fontWeight: '800' }}>{report.satisfactionRating}/5 sao ⭐</Text>
+                    Đánh giá từ Công dân <Text style={{ fontWeight: '800' }}>{report.reporterName || 'Trần Anh'}</Text>: <Text style={{ fontWeight: '800' }}>{report.satisfactionRating}/5 sao ⭐</Text>
                   </Text>
                 </View>
               )

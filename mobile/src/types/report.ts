@@ -40,6 +40,8 @@ export interface FieldReport {
   departmentAssigned?: string;
   ubndResponse?: UbndFeedbackResponse;
   satisfactionRating?: number;
+  reporterName?: string;
+  reporterPhone?: string;
 }
 
 export interface AdminProcedureReport {

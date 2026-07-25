@@ -35,6 +35,8 @@ export interface IFeedback extends Document {
   comments: number;
   ubndResponse?: IUbndFeedbackResponse;
   satisfactionRating?: number;
+  reporterName?: string;
+  reporterPhone?: string;
   createdAt: Date;
 }
 
@@ -72,6 +74,8 @@ const FeedbackSchema = new Schema<IFeedback>(
     comments: { type: Number, default: 0 },
     ubndResponse: { type: UbndResponseSchema },
     satisfactionRating: { type: Number },
+    reporterName: { type: String, default: 'Trần Anh' },
+    reporterPhone: { type: String, default: '0912345678' },
   },
   { timestamps: true }
 );

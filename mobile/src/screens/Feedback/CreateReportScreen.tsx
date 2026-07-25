@@ -40,7 +40,7 @@ const CATEGORIES: { key: ReportCategory; label: string }[] = [
 ];
 
 export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
-  const isField = route.params.type === 'field';
+  const isField = route?.params?.type === 'field';
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
@@ -91,7 +91,21 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
     ]);
   };
 
+  const { isAuthenticated } = useAuthStore();
+
   const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Yêu cầu Đăng nhập',
+        'Vui lòng đăng nhập tài khoản để gửi phản ánh & kiến nghị tới Mặt trận Tổ quốc.',
+        [
+          { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+          { text: 'Đóng', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
     if (!title.trim()) {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập tiêu đề kiến nghị / phản ánh');
       return;
@@ -117,7 +131,9 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
       category || 'supervision',
       deptMap[targetOrg] || 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
       selectedImage || 'https://picsum.photos/seed/user_new/400/250',
-      targetOrg
+      targetOrg,
+      user?.fullName || 'Trần Anh',
+      user?.phone || '0912345678'
     );
 
     Alert.alert('Gửi thành công!', 'Ý kiến của bạn đã được tiếp nhận và lưu trực tiếp vào Database MongoDB Cloud.', [

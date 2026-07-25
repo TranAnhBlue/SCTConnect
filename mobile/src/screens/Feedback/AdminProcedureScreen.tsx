@@ -8,12 +8,14 @@ import {
   SafeAreaView,
   StatusBar,
   TextInput,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, AdminProcedureReport, ReportStatus } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 import { mockAdminReports } from '../../api/mockData';
+import { useAuthStore } from '../../store/authStore';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
@@ -60,6 +62,8 @@ export const AdminProcedureScreen: React.FC<Props> = ({ navigation }) => {
         r.reporterName.toLowerCase().includes(searchText.toLowerCase())
       )
     : mockAdminReports;
+
+  const { isAuthenticated } = useAuthStore();
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -133,7 +137,20 @@ export const AdminProcedureScreen: React.FC<Props> = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => navigation.navigate('CreateReport', { type: 'admin' })}
+          onPress={() => {
+            if (!isAuthenticated) {
+              Alert.alert(
+                'Yêu cầu Đăng nhập',
+                'Vui lòng đăng nhập tài khoản để gửi phản ánh Thủ tục Hành chính.',
+                [
+                  { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+                  { text: 'Đóng', style: 'cancel' },
+                ]
+              );
+              return;
+            }
+            navigation.navigate('CreateReport', { type: 'admin' });
+          }}
           activeOpacity={0.85}
         >
           <MaterialCommunityIcons name="plus" size={28} color="#FFFFFF" />

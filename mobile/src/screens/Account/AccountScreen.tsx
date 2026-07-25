@@ -19,7 +19,7 @@ export const AccountScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isAuthenticated, user, logout } = useAuthStore();
 
-  const isOfficer = !!(user?.role && user.role !== 'citizen');
+  const isOfficer = isAuthenticated && !!(user?.role && user.role !== 'citizen');
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -83,10 +83,17 @@ export const AccountScreen: React.FC = () => {
             style={styles.menuRow}
             activeOpacity={0.7}
             onPress={() => {
-              if (!isAuthenticated && i === 0) {
-                navigation.navigate('Login');
+              if (!isAuthenticated) {
+                Alert.alert(
+                  'Yêu cầu Đăng nhập',
+                  `Vui lòng đăng nhập tài khoản để truy cập tính năng "${item.label}".`,
+                  [
+                    { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+                    { text: 'Đóng', style: 'cancel' },
+                  ]
+                );
               } else {
-                Alert.alert(item.label, 'Tính năng đang được kích hoạt đồng bộ.');
+                Alert.alert(item.label, 'Tính năng bảo mật tài khoản đã được bảo vệ.');
               }
             }}
           >

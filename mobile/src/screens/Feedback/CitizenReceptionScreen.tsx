@@ -93,8 +93,8 @@ const UPCOMING_SCHEDULES: ReceptionSchedule[] = [
 ];
 
 export const CitizenReceptionScreen: React.FC<Props> = ({ navigation }) => {
-  const { user } = useAuthStore();
-  const isOfficer = !!(user?.role && user.role !== 'citizen');
+  const { user, isAuthenticated } = useAuthStore();
+  const isOfficer = isAuthenticated && !!(user?.role && user.role !== 'citizen');
   const [activeTab, setActiveTab] = useState<'schedule' | 'register' | 'my_registrations'>('schedule');
 
   // Registration Form State
@@ -147,6 +147,18 @@ export const CitizenReceptionScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleRegisterSubmit = async () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Yêu cầu Đăng nhập',
+        'Vui lòng đăng nhập tài khoản để gửi Phiếu Đăng ký Tiếp công dân & Đối thoại với Lãnh đạo.',
+        [
+          { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+          { text: 'Đóng', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
     const finalName = citizenName.trim() || user?.fullName || 'Trần Anh';
     const finalPhone = phone.trim() || '0912345678';
     const finalReason = reason.trim() || 'Đăng ký đối thoại trực tiếp với Lãnh đạo Mặt trận Xã';

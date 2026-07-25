@@ -10,12 +10,14 @@ import {
   SafeAreaView,
   StatusBar,
   TextInput,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, FieldReport, ReportCategory, ReportStatus } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 import { useReportStore } from '../../store/reportStore';
+import { useAuthStore } from '../../store/authStore';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
@@ -192,7 +194,20 @@ export const FieldReportScreen: React.FC<Props> = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => navigation.navigate('CreateReport', { type: 'field' })}
+          onPress={() => {
+            if (!isAuthenticated) {
+              Alert.alert(
+                'Yêu cầu Đăng nhập',
+                'Vui lòng đăng nhập tài khoản để gửi phản ánh hiện trường.',
+                [
+                  { text: 'Đăng nhập Ngay', onPress: () => navigation.navigate('Login') },
+                  { text: 'Đóng', style: 'cancel' },
+                ]
+              );
+              return;
+            }
+            navigation.navigate('CreateReport', { type: 'field' });
+          }}
           activeOpacity={0.85}
         >
           <MaterialCommunityIcons name="plus" size={28} color="#FFFFFF" />

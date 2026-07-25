@@ -25,8 +25,8 @@ interface Props {
 }
 
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
-  const { user } = useAuthStore();
-  const isOfficer = user?.role && user.role !== 'citizen';
+  const { user, isAuthenticated } = useAuthStore();
+  const isOfficer = isAuthenticated && !!(user?.role && user.role !== 'citizen');
 
   if (isOfficer) {
     return <OfficerHomeScreen navigation={navigation} />;
@@ -76,15 +76,15 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         {/* Banner */}
         <BannerCarousel />
 
-        {/* Smart City Services */}
+        {/* Smart MTTQ Services */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tiện ích đô thị thông minh</Text>
+          <Text style={styles.sectionTitle}>Tiện ích Mặt trận & Dịch vụ Nhân dân</Text>
           <ServiceGrid onServicePress={handleServicePress} />
         </View>
 
         {/* New Services */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tiện ích mới ra mắt</Text>
+          <Text style={styles.sectionTitle}>Dịch vụ mới ra mắt</Text>
           <NewServicesRow />
         </View>
 
@@ -93,9 +93,9 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.hotlineIcon}>
             <MaterialCommunityIcons name="phone" size={18} color={Colors.primary} />
           </View>
-          <Text style={styles.hotlineLabel}>Tổng đài Hà Nội: </Text>
+          <Text style={styles.hotlineLabel}>Tổng đài Tiếp nhận Phản ánh Hà Nội: </Text>
           <Text style={styles.hotlineNumber}>1022</Text>
-          <Text style={styles.hotlineSep}> • Quận/Phường 7</Text>
+          <Text style={styles.hotlineSep}> • Xã Thanh Oai</Text>
           <MaterialCommunityIcons
             name="chevron-right"
             size={18}
