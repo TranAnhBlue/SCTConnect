@@ -6,9 +6,9 @@ import {
   Image,
   Animated,
   StatusBar,
-  SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, FontSize, Spacing } from '../../constants';
 
 interface Props {

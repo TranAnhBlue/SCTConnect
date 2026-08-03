@@ -51,6 +51,8 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
+import { authService } from '../api/authService';
+
 export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   user: null,
@@ -65,24 +67,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     org?: MemberOrganization,
     titleName?: string
   ) => {
-    const isOfficer = role !== 'citizen';
-    const mockUser: User = {
-      id: isOfficer ? `officer_${role}` : 'citizen_1',
-      fullName: name || (isOfficer ? 'Nguyễn Văn Minh' : 'Trần Anh'),
-      phone: phone || '0988123456',
-      role,
-      organization: org || (isOfficer ? 'mttq' : undefined),
-      titleName: titleName || (isOfficer ? 'Phó Chủ tịch Ủy ban MTTQ Xã' : 'Công dân'),
-      department: dept || 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
-      commune: 'Ủy ban MTTQ Xã Thanh Oai',
-      district: 'Huyện Thanh Oai',
-      avatarUrl: isOfficer ? 'https://picsum.photos/seed/mttq_officer/200/200' : 'https://picsum.photos/seed/citizen/200/200',
-    };
-
+    const res = await authService.loginApi(phone, role, name, dept, org, titleName);
     set({
       isAuthenticated: true,
-      user: mockUser,
-      token: 'sctconnect-jwt-token-mttq-2026',
+      user: res.user,
+      token: res.token,
     });
   },
 

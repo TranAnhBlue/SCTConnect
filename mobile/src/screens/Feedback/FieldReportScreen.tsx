@@ -88,6 +88,7 @@ const ReportCard: React.FC<{ item: FieldReport; onPress: () => void }> = ({ item
 );
 
 export const FieldReportScreen: React.FC<Props> = ({ navigation }) => {
+  const { isAuthenticated } = useAuthStore();
   const [activeCategory, setActiveCategory] = useState<ReportCategory | 'all'>('all');
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');

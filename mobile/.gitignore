@@ -1,0 +1,13 @@
+# Mobile App .gitignore
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+*.log
+.DS_Store
+.env
+.env.local
+android/
+ios/

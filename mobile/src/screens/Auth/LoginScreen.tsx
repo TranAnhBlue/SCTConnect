@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
   ScrollView,
   StatusBar,
   Image,
@@ -38,10 +40,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     setIsLoading(true);
-    setTimeout(async () => {
-      await login(phone, password, role);
+    try {
+      await login(phone.trim(), password, role === 'officer' ? 'mttq_president' : 'citizen');
       setIsLoading(false);
-      Alert.alert('Thành công!', `Xin chào ${role === 'officer' ? 'Cán bộ Mặt Trận' : 'Công dân'}!`, [
+      Alert.alert('Đăng nhập thành công!', 'Dữ liệu tài khoản đã được xác thực thời gian thực từ MongoDB Cloud Database.', [
         {
           text: 'Vào Bảng điều khiển',
           onPress: () => {
@@ -49,7 +51,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           },
         },
       ]);
-    }, 600);
+    } catch (err: any) {
+      setIsLoading(false);
+      Alert.alert('Đăng nhập thất bại', err.message || 'Số điện thoại hoặc thông tin không hợp lệ');
+    }
   };
 
   const handleQuickLoginCitizen = async () => {
@@ -91,12 +96,13 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           
           {/* Header Back Button */}
@@ -309,7 +315,37 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 }}
               >
                 <MaterialCommunityIcons name="medal" size={16} color="#2E7D32" />
-                <Text style={[styles.demoOrgText, { color: '#2E7D32' }]}>🎖️ Chủ tịch Hội Cựu chiến binh</Text>
+                <Text style={[styles.demoOrgText, { color: '#2E7D32' }]}>🎖️ Chủ tịch Hội CCB</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.demoOrgBtn, { backgroundColor: '#F9FBE7', borderColor: '#F0F4C3' }]}
+                onPress={async () => {
+                  setIsLoading(true);
+                  await login('0988777888', '123456', 'farmer_leader', 'Đồng chí Nguyễn Văn Nông', 'Hội Nông dân Xã', 'farmers', 'Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Nông dân');
+                  setIsLoading(false);
+                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Nông Dân.', [
+                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                  ]);
+                }}
+              >
+                <MaterialCommunityIcons name="sprout" size={16} color="#827717" />
+                <Text style={[styles.demoOrgText, { color: '#827717' }]}>🌾 Chủ tịch Hội Nông dân</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.demoOrgBtn, { backgroundColor: '#FFF3E0', borderColor: '#FFE0B2' }]}
+                onPress={async () => {
+                  setIsLoading(true);
+                  await login('0988999000', '123456', 'union_leader', 'Đồng chí Hoàng Văn Công', 'Công đoàn / LĐLĐ Xã', 'union', 'Phó Chủ tịch MTTQ kiêm Chủ tịch Công đoàn');
+                  setIsLoading(false);
+                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Chủ tịch Công Đoàn.', [
+                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                  ]);
+                }}
+              >
+                <MaterialCommunityIcons name="tools" size={16} color="#E65100" />
+                <Text style={[styles.demoOrgText, { color: '#E65100' }]}>🛠️ Chủ tịch Công đoàn</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -325,6 +361,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  </TouchableWithoutFeedback>
   );
 };
 

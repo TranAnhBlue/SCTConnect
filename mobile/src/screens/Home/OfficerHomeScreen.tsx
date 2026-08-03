@@ -120,8 +120,13 @@ export const OfficerHomeScreen: React.FC<Props> = ({ navigation }) => {
   const userOrgKey = user?.organization || (user?.role === 'youth_leader' ? 'youth' : user?.role === 'women_leader' ? 'women' : user?.role === 'veteran_leader' ? 'veterans' : user?.role === 'union_leader' ? 'union' : user?.role === 'farmer_leader' ? 'farmers' : 'mttq');
   const roleConfig = ROLE_CONFIGS[userOrgKey] || ROLE_CONFIGS.mttq;
 
-  // Initial active org filter defaults to user's specific organization
-  const [activeOrg, setActiveOrg] = React.useState<string>('all');
+  const isMttqPresident = user?.role === 'mttq_president' || user?.role === 'admin';
+  const defaultOrgFilter = isMttqPresident ? 'all' : userOrgKey;
+  const [activeOrg, setActiveOrg] = React.useState<string>(defaultOrgFilter);
+
+  React.useEffect(() => {
+    setActiveOrg(isMttqPresident ? 'all' : userOrgKey);
+  }, [userOrgKey, user?.role]);
 
   const filteredReports = React.useMemo(() => {
     if (activeOrg === 'all') return fieldReports;
