@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { useAuthStore } from '../store/authStore';
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) {
@@ -41,9 +42,10 @@ export const apiClient = axios.create({
 // Request interceptor – attach token when available
 apiClient.interceptors.request.use(
   (config) => {
-    // TODO: attach auth token when BE is ready
-    // const token = authStore.getState().token;
-    // if (token) config.headers.Authorization = `Bearer ${token}`;
+    const token = useAuthStore.getState().token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -54,10 +56,11 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // TODO: handle token refresh / logout
+      useAuthStore.getState().logout();
     }
     return Promise.reject(error);
   }
 );
 
 export default apiClient;
+

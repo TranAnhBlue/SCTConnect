@@ -1,8 +1,10 @@
 import { Router } from 'express';
-import { getServices } from '../controllers/serviceController';
+import { getServices, getAdminProcedureReports } from '../controllers/serviceController';
 
 const router = Router();
 
 router.get('/', getServices);
+router.get('/admin-procedures', getAdminProcedureReports);
 
 export default router;
+

@@ -11,7 +11,9 @@ interface ReportState {
   error: string | null;
 
   fetchFieldReports: () => Promise<void>;
-  createReport: (title: string, description: string, address: string, category: any, departmentAssigned?: string, imageUrl?: string) => Promise<FieldReport>;
+  fetchStats: () => Promise<void>;
+  fetchAdminReports: () => Promise<void>;
+  createReport: (title: string, description: string, address: string, category: any, departmentAssigned?: string, imageUrl?: string, targetOrganization?: string, reporterName?: string, reporterPhone?: string) => Promise<FieldReport>;
   respondToReport: (id: string, response: UbndFeedbackResponse) => Promise<void>;
   rateReport: (id: string, rating: number) => Promise<void>;
   clearError: () => void;
@@ -33,6 +35,24 @@ export const useReportStore = create<ReportState>((set, get) => ({
       set({ error: e.message || 'Lỗi tải danh sách phản ánh' });
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  fetchStats: async () => {
+    try {
+      const stats = await reportService.getReportStats();
+      set({ stats });
+    } catch (e: any) {
+      console.warn('Error fetching stats:', e);
+    }
+  },
+
+  fetchAdminReports: async () => {
+    try {
+      const adminReports = await reportService.getAdminReports();
+      set({ adminReports });
+    } catch (e: any) {
+      console.warn('Error fetching admin reports:', e);
     }
   },
 
@@ -94,3 +114,4 @@ export const useReportStore = create<ReportState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 }));
+

@@ -86,7 +86,16 @@ export const reportService = {
 
   // ─── Admin Procedure Reports ─────────────────────────────────────────────────
   async getAdminReports(): Promise<AdminProcedureReport[]> {
-    return mockAdminReports;
+    try {
+      const res = await apiClient.get('/services/admin-procedures');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        return res.data.data;
+      }
+      return mockAdminReports;
+    } catch (err) {
+      console.warn('API Error fetching admin procedures:', err);
+      return mockAdminReports;
+    }
   },
 
   async createAdminReport(
@@ -102,10 +111,40 @@ export const reportService = {
 
   // ─── District / Map Data ─────────────────────────────────────────────────────
   async getDistrictReports(): Promise<DistrictReport[]> {
-    return mockDistrictReports;
+    try {
+      const res = await apiClient.get('/feedbacks/map-districts');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        return res.data.data;
+      }
+      return mockDistrictReports;
+    } catch (err) {
+      console.warn('API Error fetching district map reports:', err);
+      return mockDistrictReports;
+    }
   },
 
   async getReportStats(): Promise<ReportStats> {
-    return mockStats;
+    try {
+      const res = await apiClient.get('/feedbacks/stats');
+      if (res.data?.success && res.data.data) {
+        return res.data.data;
+      }
+      return mockStats;
+    } catch (err) {
+      console.warn('API Error fetching report stats:', err);
+      return mockStats;
+    }
+  },
+
+  // ─── Media Upload API ─────────────────────────────────────────────────────────
+  async uploadImage(imageBase64?: string, fileName?: string): Promise<string> {
+    try {
+      const res = await apiClient.post('/upload', { imageBase64, fileName });
+      return res.data?.data?.url || 'https://picsum.photos/seed/uploaded/600/400';
+    } catch (err) {
+      console.warn('API Error uploading image:', err);
+      return 'https://picsum.photos/seed/fallback/600/400';
+    }
   },
 };
+

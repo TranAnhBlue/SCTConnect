@@ -10,6 +10,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import messageRoutes from './routes/messageRoutes';
 import serviceRoutes from './routes/serviceRoutes';
 import citizenReceptionRoutes from './routes/citizenReceptionRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 
 dotenv.config();
 
@@ -28,7 +29,7 @@ app.get('/api/v1/health', (req: Request, res: Response) => {
   res.json({
     status: 'OK',
     server: 'SCTConnect Fullstack Backend API (Node.js + Express + MongoDB Atlas)',
-    modules: ['auth', 'feedbacks', 'community', 'notifications', 'messages', 'services', 'receptions'],
+    modules: ['auth', 'feedbacks', 'community', 'notifications', 'messages', 'services', 'receptions', 'upload'],
     time: new Date().toISOString(),
   });
 });
@@ -41,6 +42,7 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/messages', messageRoutes);
 app.use('/api/v1/services', serviceRoutes);
 app.use('/api/v1/receptions', citizenReceptionRoutes);
+app.use('/api/v1/upload', uploadRoutes);
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: any) => {
@@ -55,9 +57,7 @@ app.listen(PORT, () => {
   console.log(`📡 Health Check: http://localhost:${PORT}/api/v1/health`);
   console.log(`📑 Feedbacks:    http://localhost:${PORT}/api/v1/feedbacks`);
   console.log(`👤 Auth & Users:  http://localhost:${PORT}/api/v1/auth/me`);
-  console.log(`💬 Community:    http://localhost:${PORT}/api/v1/posts`);
-  console.log(`🔔 Notify:       http://localhost:${PORT}/api/v1/notifications`);
-  console.log(`✉️ Chat Messages: http://localhost:${PORT}/api/v1/messages/conversations`);
-  console.log(`🛠️ Services:     http://localhost:${PORT}/api/v1/services`);
+  console.log(`📷 Upload API:   http://localhost:${PORT}/api/v1/upload`);
   console.log(`====================================================`);
 });
+
