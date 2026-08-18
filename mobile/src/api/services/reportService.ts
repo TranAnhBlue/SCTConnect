@@ -1,8 +1,5 @@
 import { FieldReport, AdminProcedureReport, DistrictReport, ReportStats, UbndFeedbackResponse } from '../../types';
 import { apiClient } from '../axios';
-import { mockFieldReports } from '../mockData/fieldReports';
-import { mockAdminReports } from '../mockData/adminReports';
-import { mockDistrictReports, mockStats } from '../mockData/districtReports';
 
 export const reportService = {
   // ─── Field Reports (MongoDB Atlas Cloud Integration) ────────────────────────
@@ -15,10 +12,14 @@ export const reportService = {
           title: item.title,
           description: item.description,
           address: item.address,
-          category: item.category || 'environment',
+          category: item.category || 'supervision',
           status: item.status || 'pending',
           departmentAssigned: item.departmentAssigned,
+          targetOrganization: item.targetOrganization,
+          reporterName: item.reporterName,
+          reporterPhone: item.reporterPhone,
           imageUrl: item.imageUrl,
+          imageUrls: item.imageUrls,
           likes: item.likes || 0,
           comments: item.comments || 0,
           ubndResponse: item.ubndResponse,
@@ -27,15 +28,25 @@ export const reportService = {
           timeAgo: item.createdAt ? 'Vừa xong' : 'Hôm nay',
         }));
       }
-      return mockFieldReports;
+      return [];
     } catch (err) {
-      console.warn('API Offline - Using mock data fallback:', err);
-      return mockFieldReports;
+      console.warn('API Error getFieldReports:', err);
+      return [];
     }
   },
 
   async createFieldReport(
-    data: { title: string; description: string; address: string; category: any; departmentAssigned?: string; imageUrl?: string }
+    data: {
+      title: string;
+      description: string;
+      address: string;
+      category: any;
+      departmentAssigned?: string;
+      imageUrl?: string;
+      targetOrganization?: string;
+      reporterName?: string;
+      reporterPhone?: string;
+    }
   ): Promise<FieldReport> {
     try {
       const res = await apiClient.post('/feedbacks', data);
@@ -91,10 +102,10 @@ export const reportService = {
       if (res.data?.success && Array.isArray(res.data.data)) {
         return res.data.data;
       }
-      return mockAdminReports;
+      return [];
     } catch (err) {
       console.warn('API Error fetching admin procedures:', err);
-      return mockAdminReports;
+      return [];
     }
   },
 
@@ -116,10 +127,10 @@ export const reportService = {
       if (res.data?.success && Array.isArray(res.data.data)) {
         return res.data.data;
       }
-      return mockDistrictReports;
+      return [];
     } catch (err) {
       console.warn('API Error fetching district map reports:', err);
-      return mockDistrictReports;
+      return [];
     }
   },
 
@@ -129,10 +140,10 @@ export const reportService = {
       if (res.data?.success && res.data.data) {
         return res.data.data;
       }
-      return mockStats;
+      return { totalReports: 0, resolvedReports: 0, processingReports: 0, pendingReports: 0, overdueReports: 0, satisfactionRate: 100, avgRating: 5.0 };
     } catch (err) {
       console.warn('API Error fetching report stats:', err);
-      return mockStats;
+      return { totalReports: 0, resolvedReports: 0, processingReports: 0, pendingReports: 0, overdueReports: 0, satisfactionRate: 100, avgRating: 5.0 };
     }
   },
 
@@ -147,4 +158,3 @@ export const reportService = {
     }
   },
 };
-

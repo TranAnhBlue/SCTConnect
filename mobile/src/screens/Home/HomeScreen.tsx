@@ -99,27 +99,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <ServiceGrid onServicePress={handleServicePress} />
         </View>
 
-        {/* New Services */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dịch vụ mới ra mắt</Text>
-          <NewServicesRow />
-        </View>
-
-        {/* Hotline */}
-        <TouchableOpacity style={styles.hotlineCard} activeOpacity={0.8} onPress={promptLoginForGuest}>
-          <View style={styles.hotlineIcon}>
-            <MaterialCommunityIcons name="phone" size={18} color={Colors.primary} />
-          </View>
-          <Text style={styles.hotlineLabel}>Tổng đài Tiếp nhận Phản ánh Hà Nội: </Text>
-          <Text style={styles.hotlineNumber}>1022</Text>
-          <Text style={styles.hotlineSep}> • Xã Thanh Oai</Text>
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={18}
-            color={Colors.textHint}
-            style={{ marginLeft: 'auto' }}
-          />
-        </TouchableOpacity>
+       
 
         <View style={{ height: 80 }} />
       </ScrollView>

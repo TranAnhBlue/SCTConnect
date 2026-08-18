@@ -1,6 +1,8 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { connectDB } from './config/db';
 
 import authRoutes from './routes/authRoutes';
@@ -20,9 +22,31 @@ const PORT = process.env.PORT || 5000;
 // Connect MongoDB Atlas
 connectDB();
 
-// Middlewares
-app.use(cors());
-app.use(express.json());
+// Middlewares bảo mật
+app.use(helmet());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? ['https://sctconnect.vn'] : '*',
+  credentials: true,
+}));
+app.use(express.json({ limit: '10mb' }));
+
+// Rate limiting: tối đa 100 request/15 phút mỗi IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { success: false, message: 'Quá nhiều yêu cầu, vui lòng thử lại sau 15 phút.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/v1', limiter);
+
+// Rate limiting chặt hơn cho auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { success: false, message: 'Quá nhiều lần đăng nhập thất bại, vui lòng thử lại sau.' },
+});
+app.use('/api/v1/auth', authLimiter);
 
 // Health Check Endpoint
 app.get('/api/v1/health', (req: Request, res: Response) => {

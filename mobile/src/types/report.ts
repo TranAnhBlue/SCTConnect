@@ -1,4 +1,5 @@
 export type ReportStatus = 'pending' | 'processing' | 'done' | 'rejected';
+export type ReportTypeCategory = 'incident' | 'petition' | 'suggestion' | 'environment_order';
 
 export type ReportCategory =
   | 'all'

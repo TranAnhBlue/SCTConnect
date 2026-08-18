@@ -12,6 +12,7 @@ import { CitizenReceptionScreen } from '../screens/Feedback/CitizenReceptionScre
 import { CreateReportScreen } from '../screens/Feedback/CreateReportScreen';
 import { ReportDetailScreen } from '../screens/Feedback/ReportDetailScreen';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
+import { RegisterScreen } from '../screens/Auth/RegisterScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -32,6 +33,11 @@ export const RootNavigator: React.FC = () => {
           name="Login"
           component={LoginScreen}
           options={{ animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{ animation: 'slide_from_right' }}
         />
 
         {/* Feedback flow */}

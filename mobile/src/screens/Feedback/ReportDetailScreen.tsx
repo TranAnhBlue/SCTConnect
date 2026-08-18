@@ -35,6 +35,36 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   // Live store report
   const fieldReports = useReportStore((state) => state.fieldReports);
   const report = fieldReports.find((r) => r.id === id) || fieldReports[0];
+  
+  // Handle case when no reports exist
+  if (!report) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
+        <AppBar
+          title="Chi tiết Phản ánh & Phản hồi"
+          showBack
+          onBack={() => navigation.goBack()}
+          variant="primary"
+        />
+        <View style={styles.emptyContainer}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={64} color={Colors.textHint} />
+          <Text style={styles.emptyTitle}>Không tìm thấy phản ánh</Text>
+          <Text style={styles.emptyText}>
+            Chưa có dữ liệu phản ánh nào trong hệ thống. Vui lòng tạo phản ánh mới hoặc thử lại sau.
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.emptyButtonText}>Quay lại</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
   const [userRating, setUserRating] = useState<number>(report.satisfactionRating || 0);
 
   // Officer modal state
@@ -394,7 +424,11 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.modalBody}>
+            <ScrollView 
+              contentContainerStyle={styles.modalBody}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            >
               <Text style={styles.inputLabel}>Tên Cán bộ tiếp nhận:</Text>
               <TextInput
                 style={styles.textInput}
@@ -460,6 +494,39 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   scroll: { flex: 1 },
   content: { padding: Spacing.base, gap: Spacing.md, paddingBottom: 40 },
+  
+  /* Empty State */
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+    gap: Spacing.md,
+  },
+  emptyTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.md,
+  },
+  emptyButtonText: {
+    color: '#FFFFFF',
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+  },
   
   /* Timeline */
   timelineCard: {

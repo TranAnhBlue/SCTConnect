@@ -35,31 +35,46 @@ interface CommunityPoll {
 
 const INITIAL_POLLS: CommunityPoll[] = [
   {
-    id: 'poll_1',
-    author: 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
-    roleTitle: 'Chủ tịch MTTQ Xã chỉ đạo',
-    timeAgo: '2 giờ trước',
-    title: 'Lấy ý kiến Nhân dân: Phương án nâng cấp tuyến đường liên thôn 2026',
-    description: 'Kính mời bà con nhân dân và đoàn viên hội viên biểu quyết phương án thi công tuyến đường liên thôn 3.',
-    totalVotes: 239,
+    id: 'p1',
+    author: 'Ủy ban MTTQ Việt Nam Xã Thanh Oai',
+    roleTitle: 'Cơ quan Thường trực MTTQ Xã',
+    timeAgo: 'Hôm nay',
+    title: 'Lấy ý kiến biểu quyết: Phương án Lắp đặt Hệ thống Camera An ninh & Chiếu sáng Năng lượng Mặt trời',
+    description: 'Thực hiện phương châm "Dân biết, dân bàn, dân làm, dân kiểm tra, dân giám sát, dân thụ hưởng", Ủy ban MTTQ xã lấy ý kiến biểu quyết của toàn thể bà con về phương án triển khai tại các trục đường liên thôn:',
     options: [
-      { id: 'opt_1', text: 'Phương án 1: Mở rộng 6m và bê tông hóa (Quý 3/2026)', votes: 142 },
-      { id: 'opt_2', text: 'Phương án 2: Rải thảm nhựa đường và hệ thống chiếu sáng (Quý 4/2026)', votes: 85 },
-      { id: 'opt_3', text: 'Ý kiến đóng góp bổ sung khác', votes: 12 },
+      { id: 'opt_1', text: 'Phương án 1: Xã hội hóa 50% ngân sách xã hỗ trợ, 50% nhân dân đóng góp', votes: 236 },
+      { id: 'opt_2', text: 'Phương án 2: Ưu tiên hoàn thành hệ thống Đèn năng lượng mặt trời trước (Quý 3)', votes: 168 },
+      { id: 'opt_3', text: 'Phương án 3: Triển khai theo từng ngõ xóm tự quản, cụm dân cư tự chủ', votes: 94 },
     ],
+    totalVotes: 498,
   },
   {
-    id: 'poll_2',
+    id: 'p2',
     author: 'Đoàn TNCS Hồ Chí Minh Xã Thanh Oai',
-    roleTitle: 'Khối MTTQ & Đoàn thể',
+    roleTitle: 'Ban Thường vụ Đoàn Xã',
     timeAgo: '1 ngày trước',
-    title: 'Biểu quyết: Địa điểm triển khai Đội Tình nguyện Chuyển đổi số & VNeID tuần tới',
-    description: 'Thanh niên xung kích mở điểm hỗ trợ trực tiếp người cao tuổi cài đặt định danh điện tử.',
-    totalVotes: 180,
+    title: 'Bình chọn: Tuyến đường Hoa Thanh niên & Bức tranh Bích họa Làng quê 2026',
+    description: 'Đoàn Thanh niên xã phối hợp Hội Phụ nữ tổ chức đợt ra quân chỉnh trang cảnh quan. Kính mời bà con nhân dân bình chọn khu vực ưu tiên làm đẹp đợt 1:',
     options: [
-      { id: 'opt_2_1', text: 'Nhà Văn hóa Thôn Chiến Chiện (Thứ 7)', votes: 110 },
-      { id: 'opt_2_2', text: 'Trụ sở Ủy ban Mặt trận Xã (Chủ nhật)', votes: 70 },
+      { id: 'opt_4', text: 'Tuyến đường từ Cổng chào vào Nhà Văn hóa Thôn Chiến Chiện', votes: 185 },
+      { id: 'opt_5', text: 'Tuyến đê bao quanh Trường Tiểu học & Trạm Y tế Xã', votes: 142 },
+      { id: 'opt_6', text: 'Khu vực bến sông và đường hoa ven kênh Thôn Bình Minh', votes: 110 },
     ],
+    totalVotes: 437,
+  },
+  {
+    id: 'p3',
+    author: 'Hội Nông dân Xã Thanh Oai',
+    roleTitle: 'Ban Chấp hành Hội Nông dân',
+    timeAgo: '2 ngày trước',
+    title: 'Khảo sát: Nhu cầu vay vốn ưu đãi đầu tư Máy gặt & Hệ thống sấy lúa vụ Thu Đông',
+    description: 'Hội Nông dân xã tổng hợp nhu cầu của các tổ hội nông nghiệp để đề xuất Hội đồng quản lý Quỹ Hỗ trợ Nông dân huyện phân bổ nguồn vốn:',
+    options: [
+      { id: 'opt_7', text: 'Nhu cầu vay từ 50 - 100 triệu đồng (Cá nhân/hộ kinh doanh)', votes: 156 },
+      { id: 'opt_8', text: 'Nhu cầu vay từ 300 - 500 triệu đồng (Tổ hợp tác/Hợp tác xã)', votes: 78 },
+      { id: 'opt_9', text: 'Chưa có nhu cầu vay vốn trong đợt này', votes: 45 },
+    ],
+    totalVotes: 279,
   },
 ];
 
@@ -83,7 +98,7 @@ export const CommunityScreen: React.FC = () => {
     }
 
     if (votedOptions[pollId]) {
-      Alert.alert('Đã bình chọn', 'Bạn đã thực hiện biểu quyết cho nội dung này.');
+      Alert.alert('Đã biểu quyết', 'Bạn đã thực hiện biểu quyết cho nội dung này.');
       return;
     }
 
@@ -103,7 +118,7 @@ export const CommunityScreen: React.FC = () => {
       })
     );
 
-    Alert.alert('Cảm ơn bạn!', 'Ý kiến biểu quyết của bạn đã được ghi nhận trực tiếp vào Hệ thống Mặt trận Xã.');
+    Alert.alert('Cảm ơn bạn! 🎉', 'Ý kiến biểu quyết của bạn đã được ghi nhận trực tiếp vào Hệ thống Cơ sở dữ liệu Mặt trận Xã.');
   };
 
   const handleCreateDiscussion = () => {
@@ -119,7 +134,7 @@ export const CommunityScreen: React.FC = () => {
       return;
     }
 
-    Alert.alert('Mở chủ đề thảo luận', 'Tính năng tạo câu hỏi biểu quyết mới dành cho Mặt trận & Công dân.');
+    Alert.alert('Mở chủ đề thảo luận', 'Bạn có thể gửi câu hỏi hoặc đề xuất ý kiến trực tiếp tới Ban Thường trực Ủy ban Mặt trận Xã qua tính năng Gửi phản ánh & Kiến nghị.');
   };
 
   return (
@@ -129,7 +144,7 @@ export const CommunityScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Biểu quyết & Thảo luận Dân chủ</Text>
-        <Text style={styles.headerSub}>Mặt trận Tổ quốc Việt Nam Xã Thanh Oai</Text>
+        <Text style={styles.headerSub}>Ủy ban Mặt trận Tổ quốc Việt Nam Xã Thanh Oai</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -176,7 +191,7 @@ export const CommunityScreen: React.FC = () => {
 
                       {/* Progress bar */}
                       <View style={styles.progressBg}>
-                        <View style={[styles.progressFill, { width: `${percent}%`, backgroundColor: isSelected ? '#2E7D32' : '#1565C0' }]} />
+                        <View style={[styles.progressFill, { width: `${percent}%`, backgroundColor: isSelected ? '#2E7D32' : '#B71C1C' }]} />
                       </View>
                     </TouchableOpacity>
                   );
@@ -200,8 +215,8 @@ export const CommunityScreen: React.FC = () => {
 
       {/* Floating Action Button to Create Discussion */}
       <TouchableOpacity style={styles.fabBtn} onPress={handleCreateDiscussion} activeOpacity={0.85}>
-        <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
-        <Text style={styles.fabBtnText}>Tạo Biểu quyết mới</Text>
+        <MaterialCommunityIcons name="plus" size={22} color="#FFF" />
+        <Text style={styles.fabBtnText}>Gửi Ý kiến Biểu quyết</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -241,7 +256,7 @@ const styles = StyleSheet.create({
     ...Shadow.sm,
   },
   pollHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  authorBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  authorBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   authorName: { fontSize: FontSize.xs, fontWeight: '700', color: '#D32F2F' },
   pollTime: { fontSize: FontSize.xs, color: Colors.textHint },
   pollTitle: { fontSize: FontSize.base, fontWeight: '700', color: Colors.textPrimary },
@@ -258,7 +273,7 @@ const styles = StyleSheet.create({
   },
   optBtnSelected: { backgroundColor: '#E8F5E9', borderColor: '#2E7D32' },
   optTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  optText: { flex: 1, fontSize: FontSize.xs, color: Colors.textPrimary, fontWeight: '600' },
+  optText: { flex: 1, fontSize: FontSize.xs, color: Colors.textPrimary, fontWeight: '600', paddingRight: 8 },
   optTextSelected: { color: '#2E7D32', fontWeight: '700' },
   optPercent: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: '700' },
   progressBg: { height: 6, backgroundColor: '#E0E0E0', borderRadius: 3, overflow: 'hidden' },

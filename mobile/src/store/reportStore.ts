@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { FieldReport, AdminProcedureReport, ReportStats, UbndFeedbackResponse } from '../types';
 import { reportService } from '../api/services/reportService';
-import { mockFieldReports } from '../api/mockData/fieldReports';
 
 interface ReportState {
   fieldReports: FieldReport[];
@@ -20,7 +19,7 @@ interface ReportState {
 }
 
 export const useReportStore = create<ReportState>((set, get) => ({
-  fieldReports: mockFieldReports,
+  fieldReports: [],
   adminReports: [],
   stats: null,
   isLoading: false,

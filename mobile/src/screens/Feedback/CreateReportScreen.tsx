@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
+  KeyboardAvoidingView,
   ScrollView,
   StatusBar,
   Alert,
@@ -18,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../../types';
+import { RootStackParamList, ReportCategory } from '../../types';
 import { Colors, Spacing, FontSize, BorderRadius, Shadow } from '../../constants';
 import { useReportStore } from '../../store/reportStore';
 import { useAuthStore } from '../../store/authStore';
@@ -287,20 +288,29 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FDF2F4" />
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FDF2F4" />
 
-        {/* App Bar */}
-        <View style={styles.appBar}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <MaterialCommunityIcons name="chevron-left" size={28} color="#9C1C24" />
-          </TouchableOpacity>
-          <Text style={styles.appBarTitle}>Gửi Phản ánh & Kiến nghị</Text>
-          <View style={{ width: 40 }} />
-        </View>
+      {/* App Bar */}
+      <View style={styles.appBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <MaterialCommunityIcons name="chevron-left" size={28} color="#9C1C24" />
+        </TouchableOpacity>
+        <Text style={styles.appBarTitle}>Gửi Phản ánh & Kiến nghị</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          style={styles.scroll} 
+          contentContainerStyle={styles.content} 
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
 
         {/* 1. Header Emblem Banner Card (Matching Mockup pink card) */}
         <View style={styles.bannerCard}>
@@ -516,6 +526,7 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Voice Speech-to-Text Recording Modal */}
       <Modal
@@ -592,7 +603,6 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
       </Modal>
     </SafeAreaView>
-  </TouchableWithoutFeedback>
   );
 };
 

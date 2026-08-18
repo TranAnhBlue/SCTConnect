@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { Colors, Spacing, FontSize, BorderRadius, Shadow } from '../../constants';
 import { useAuthStore } from '../../store/authStore';
+import { authService } from '../../api/authService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -33,6 +35,14 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Register Modal States
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [regName, setRegName] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regRole, setRegRole] = useState<any>('citizen');
+  const [isRegistering, setIsRegistering] = useState(false);
+
   const handleLogin = async () => {
     if (!phone.trim()) {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập số điện thoại đăng nhập');
@@ -43,7 +53,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     try {
       await login(phone.trim(), password, role === 'officer' ? 'mttq_president' : 'citizen');
       setIsLoading(false);
-      Alert.alert('Đăng nhập thành công!', 'Dữ liệu tài khoản đã được xác thực thời gian thực từ MongoDB Cloud Database.', [
+      Alert.alert('Đăng nhập thành công!', 'Tài khoản đã được xác thực từ MongoDB Cloud Database.', [
         {
           text: 'Vào Bảng điều khiển',
           onPress: () => {
@@ -56,6 +66,45 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       Alert.alert('Đăng nhập thất bại', err.message || 'Số điện thoại hoặc thông tin không hợp lệ');
     }
   };
+
+  const handleRegisterSubmit = async () => {
+    if (!regPhone.trim() || !regName.trim() || !regPassword.trim()) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ Họ tên, Số điện thoại và Mật khẩu tự chọn');
+      return;
+    }
+
+    setIsRegistering(true);
+    try {
+      const res = await authService.registerApi({
+        fullName: regName.trim(),
+        phone: regPhone.trim(),
+        password: regPassword.trim(),
+        role: regRole,
+        department: regRole !== 'citizen' ? 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã' : undefined,
+      });
+
+      // Automatically login after successful registration
+      await login(regPhone.trim(), regPassword.trim(), regRole, regName.trim());
+      setIsRegistering(false);
+      setShowRegisterModal(false);
+
+      Alert.alert(
+        '🎉 Đăng ký thành công!',
+        `Tài khoản "${regName.trim()}" với Mật khẩu đã chọn được bảo mật trên MongoDB Cloud Database.`,
+        [
+          {
+            text: 'Bắt đầu sử dụng',
+            onPress: () => navigation.popToTop(),
+          },
+        ]
+      );
+    } catch (err: any) {
+      setIsRegistering(false);
+      Alert.alert('Đăng ký thất bại', err.message || 'Số điện thoại có thể đã tồn tại');
+    }
+  };
+
+
 
   const handleQuickLoginCitizen = async () => {
     setRole('citizen');
@@ -100,10 +149,16 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView 
+          style={styles.scroll} 
+          contentContainerStyle={styles.content} 
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
           
           {/* Header Back Button */}
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -236,11 +291,21 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 </>
               )}
             </TouchableOpacity>
+
+            {/* Register Link */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 8 }}>
+              <Text style={{ fontSize: FontSize.xs, color: Colors.textSecondary }}>Chưa có tài khoản?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.7}>
+                <Text style={{ fontSize: FontSize.xs, fontWeight: '700', color: role === 'officer' ? '#D32F2F' : Colors.primary, textDecorationLine: 'underline' }}>
+                  Đăng ký tài khoản mới
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Quick Demo Login Triggers */}
           <View style={styles.demoSection}>
-            <Text style={styles.demoTitle}>🏛️ Chọn Vai trò Thử nghiệm (Mô hình MTTQ 2025):</Text>
+            <Text style={styles.demoTitle}>🏛️ Chọn Vai trò Thử nghiệm (Mô hình MTTQ 2026):</Text>
 
             <TouchableOpacity
               style={styles.demoBtnCitizen}
@@ -353,16 +418,115 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           {/* Footer Register Prompt */}
           <View style={styles.footerPrompt}>
             <Text style={styles.footerText}>Chưa có tài khoản?</Text>
-            <TouchableOpacity onPress={() => Alert.alert('Đăng ký', 'Tính năng đăng ký tài khoản công dân tự động qua VNeID / CCCD.')}>
+            <TouchableOpacity onPress={() => setShowRegisterModal(true)}>
               <Text style={styles.registerLink}> Đăng ký ngay</Text>
             </TouchableOpacity>
           </View>
 
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Modal Đăng Ký Tài Khoản Mới */}
+      <Modal visible={showRegisterModal} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>📝 Đăng ký Tài khoản Mới</Text>
+              <TouchableOpacity onPress={() => setShowRegisterModal(false)}>
+                <MaterialCommunityIcons name="close" size={24} color={Colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+              <View style={styles.modalForm}>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Họ và Tên (*)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Ví dụ: Nguyễn Văn A"
+                    placeholderTextColor={Colors.textHint}
+                    value={regName}
+                    onChangeText={setRegName}
+                  />
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Số điện thoại (*)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Ví dụ: 0912345678"
+                    placeholderTextColor={Colors.textHint}
+                    keyboardType="phone-pad"
+                    value={regPhone}
+                    onChangeText={setRegPhone}
+                  />
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Mật khẩu / Mã PIN (*)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Nhập mật khẩu tự chọn..."
+                    placeholderTextColor={Colors.textHint}
+                    secureTextEntry={true}
+                    value={regPassword}
+                    onChangeText={setRegPassword}
+                  />
+                </View>
+
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Chọn Vai trò</Text>
+                  <View style={styles.rolePickerRow}>
+                    <TouchableOpacity
+                      style={[styles.roleChip, regRole === 'citizen' && styles.roleChipActive]}
+                      onPress={() => setRegRole('citizen')}
+                    >
+                      <Text style={[styles.roleChipText, regRole === 'citizen' && styles.roleChipTextActive]}>
+                        👤 Công dân
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.roleChip, regRole === 'mttq_president' && styles.roleChipActiveOfficer]}
+                      onPress={() => setRegRole('mttq_president')}
+                    >
+                      <Text style={[styles.roleChipText, regRole === 'mttq_president' && styles.roleChipTextActive]}>
+                        🏛️ Cán bộ MTTQ
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.roleChip, regRole === 'youth_leader' && styles.roleChipActiveYouth]}
+                      onPress={() => setRegRole('youth_leader')}
+                    >
+                      <Text style={[styles.roleChipText, regRole === 'youth_leader' && styles.roleChipTextActive]}>
+                        🚩 Đoàn Thanh niên
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.registerSubmitBtn}
+                  onPress={handleRegisterSubmit}
+                  disabled={isRegistering}
+                >
+                  {isRegistering ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.registerSubmitText}>Xác nhận Đăng ký tài khoản MongoDB</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   </TouchableWithoutFeedback>
   );
+
 };
 
 const styles = StyleSheet.create({
@@ -516,4 +680,66 @@ const styles = StyleSheet.create({
   footerPrompt: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: Spacing.sm },
   footerText: { fontSize: FontSize.sm, color: Colors.textSecondary },
   registerLink: { fontSize: FontSize.sm, color: Colors.primary, fontWeight: '700' },
+
+  /* Modal Register Styles */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    padding: Spacing.base,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl || 16,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    ...Shadow.md,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: Spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: '800', color: Colors.textPrimary },
+  modalForm: { gap: Spacing.md, marginTop: Spacing.xs },
+  modalInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Platform.OS === 'ios' ? 12 : Spacing.sm,
+    fontSize: FontSize.base,
+    color: Colors.textPrimary,
+  },
+  rolePickerRow: { flexDirection: 'row', gap: Spacing.xs, marginTop: 4 },
+  roleChip: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  roleChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  roleChipActiveOfficer: { backgroundColor: '#D32F2F', borderColor: '#D32F2F' },
+  roleChipActiveYouth: { backgroundColor: '#1565C0', borderColor: '#1565C0' },
+  roleChipText: { fontSize: 11, fontWeight: '600', color: Colors.textSecondary },
+  roleChipTextActive: { color: '#FFFFFF', fontWeight: '800' },
+  registerSubmitBtn: {
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.sm,
+    ...Shadow.sm,
+  },
+  registerSubmitText: { color: '#FFFFFF', fontSize: FontSize.base, fontWeight: '700' },
 });
+

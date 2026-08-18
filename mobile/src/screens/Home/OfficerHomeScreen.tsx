@@ -202,7 +202,7 @@ export const OfficerHomeScreen: React.FC<Props> = ({ navigation }) => {
             {/* Notification Bell */}
             <TouchableOpacity
               style={{ position: 'relative', padding: 8 }}
-              onPress={() => navigation.navigate('Notifications')}
+              onPress={() => navigation.navigate('Notifications' as any)}
               activeOpacity={0.8}
             >
               <MaterialCommunityIcons name="bell-outline" size={26} color="#FFFFFF" />

@@ -16,7 +16,7 @@ export const receptionService = {
   getReceptions: async (): Promise<ReceptionRecord[]> => {
     try {
       const response = await api.get('/receptions');
-      if (response.data?.data) {
+      if (response.data?.data && Array.isArray(response.data.data)) {
         return response.data.data.map((item: any) => ({
           id: item._id || item.id,
           citizenName: item.citizenName,
@@ -31,20 +31,8 @@ export const receptionService = {
       }
       return [];
     } catch (err) {
-      console.warn('API Error fetching receptions, returning fallback:', err);
-      return [
-        {
-          id: 'reg_fallback_1',
-          citizenName: 'Trần Anh',
-          phone: '0912345678',
-          targetLeader: 'Chủ tịch Ủy ban MTTQ Xã',
-          desiredDate: '28/07/2026',
-          reason: 'Kiến nghị đối thoại trực tiếp về giải phóng mặt bằng và an sinh xã hội',
-          status: 'approved',
-          note: 'Đã phê duyệt lịch gặp vào 08:30 sáng 28/07/2026 tại Trụ sở Cơ quan Mặt trận Xã.',
-          createdAt: new Date().toLocaleDateString('vi-VN'),
-        },
-      ];
+      console.warn('API Error fetching receptions:', err);
+      return [];
     }
   },
 
@@ -70,7 +58,7 @@ export const receptionService = {
         createdAt: item?.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
       };
     } catch (err) {
-      console.warn('API Error creating reception, saving local fallback:', err);
+      console.warn('API Error creating reception, saving local:', err);
       return {
         id: 'reg_' + Date.now(),
         citizenName: data.citizenName,

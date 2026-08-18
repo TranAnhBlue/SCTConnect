@@ -8,6 +8,7 @@ export type RootStackParamList = {
   CreateReport: { type: 'field' | 'admin' };
   ReportDetail: { id: string };
   Login: undefined;
+  Register: undefined;
 };
 
 export type BottomTabParamList = {
