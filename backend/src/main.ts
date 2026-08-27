@@ -1,12 +1,14 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const reflector = app.get(Reflector);
 
   app.enableCors({
     origin: '*',
@@ -18,6 +20,7 @@ async function bootstrap() {
   app.setGlobalPrefix(apiPrefix);
 
   app.useGlobalPipes(new ZodValidationPipe());
+  app.useGlobalInterceptors(new TransformInterceptor(reflector));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('SCTConnect API - MTTQ Cấp Xã')
