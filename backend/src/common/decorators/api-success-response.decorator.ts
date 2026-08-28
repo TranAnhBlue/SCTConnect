@@ -1,5 +1,5 @@
 import { applyDecorators, Type } from '@nestjs/common';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiExtraModels, ApiResponse, getSchemaPath } from '@nestjs/swagger';
 import { ZodTypeAny } from 'zod';
 import { ResponseMessage } from './response-message.decorator';
 import { Serialize } from './serialize.decorator';
@@ -11,7 +11,28 @@ export function ApiSuccessResponse<T>(
   statusCode: number = 200,
 ) {
   return applyDecorators(
-    ApiResponse({ status: statusCode, type: dto }),
+    ApiExtraModels(dto),
+    ApiResponse({
+      status: statusCode,
+      description: message,
+      schema: {
+        type: 'object',
+        properties: {
+          statusCode: {
+            type: 'number',
+            example: statusCode,
+          },
+          message: {
+            type: 'string',
+            example: message,
+          },
+          data: {
+            $ref: getSchemaPath(dto),
+          },
+        },
+        required: ['statusCode', 'message', 'data'],
+      },
+    }),
     ResponseMessage(message),
     Serialize(schema),
   );

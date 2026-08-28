@@ -1,22 +1,20 @@
 import {
   Injectable,
-  ConflictException,
   UnauthorizedException,
+  ConflictException,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
-
-import { UsersService } from '../../users/services/users.service';
-import { OrganizationsService } from '../../organizations/services/organizations.service';
-import { RolesService } from '../../roles/services/roles.service';
-import { TokenService } from './token.service';
 import { PasswordService } from './password.service';
+import { TokenService } from './token.service';
+import { UsersService } from '../../users/services/users.service';
+import { UserResponseMapper } from '../../users/mappers';
 import {
   RegisterRequestDTO,
   LoginRequestDTO,
   ChangePasswordRequestDTO,
   RefreshTokenRequestDTO,
 } from '../dto';
+import { UpdateProfileRequestDTO } from '../../users/dto';
 import {
   RegisterResponse,
   LoginResponse,
@@ -29,52 +27,37 @@ import {
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly organizationsService: OrganizationsService,
-    private readonly rolesService: RolesService,
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
   ) {}
 
   async register(dto: RegisterRequestDTO): Promise<RegisterResponse> {
-    const existingUser = await this.usersService.findByPhone(dto.phone);
-    if (existingUser) {
+    const existing = await this.usersService.findByPhone(dto.phone);
+    if (existing) {
       throw new ConflictException(
-        'Số điện thoại này đã được đăng ký trong hệ thống',
+        'Số điện thoại này đã được đăng ký tài khoản trên hệ thống',
       );
     }
 
     const passwordHash = await this.passwordService.hash(dto.password);
+
     const savedUser = await this.usersService.createCitizen(
       dto.phone,
       dto.fullName,
+      dto.villageId,
       passwordHash,
+      dto.organizationId,
     );
 
-    const permissions = await this.rolesService.getUserPermissions(
-      savedUser,
-      [],
-    );
-    const tokens = await this.tokenService.generateTokens(
-      {
-        id: savedUser.id,
-        phone: savedUser.phone,
-        userType: savedUser.userType,
-      },
-      permissions,
-    );
+    const tokens = await this.tokenService.generateTokens({
+      id: savedUser.id,
+      phone: savedUser.phone,
+      userType: savedUser.userType,
+      organizationId: savedUser.organizationId,
+    });
 
     return {
-      user: {
-        id: savedUser.id,
-        phone: savedUser.phone,
-        fullName: savedUser.fullName,
-        userType: savedUser.userType,
-        avatarUrl: savedUser.avatarUrl,
-        isActive: savedUser.isActive,
-        lastLoginAt: savedUser.lastLoginAt,
-        createdAt: savedUser.createdAt,
-        updatedAt: savedUser.updatedAt,
-      },
+      user: UserResponseMapper.toResponse(savedUser),
       tokens,
     };
   }
@@ -90,66 +73,23 @@ export class AuthService {
     this.usersService.validateActive(user);
 
     await this.passwordService.verifyOrThrow(
-      user.passwordHash,
       dto.password,
+      user.passwordHash,
       'Số điện thoại hoặc mật khẩu không chính xác',
     );
 
-    const lastLoginAt = new Date();
-    await this.usersService.updateLastLogin(user.id, lastLoginAt);
+    await this.usersService.updateLastLogin(user.id);
 
-    const userOrganizations =
-      await this.organizationsService.findUserOrganizations(user.id);
-    const activeUO =
-      userOrganizations.find((uo) => uo.isPrimary) ||
-      userOrganizations[0] ||
-      null;
-
-    const permissions = await this.rolesService.getUserPermissions(
-      user,
-      userOrganizations,
-    );
-    const tokens = await this.tokenService.generateTokens(
-      {
-        id: user.id,
-        phone: user.phone,
-        userType: user.userType,
-      },
-      permissions,
-    );
+    const tokens = await this.tokenService.generateTokens({
+      id: user.id,
+      phone: user.phone,
+      userType: user.userType,
+      organizationId: user.organizationId,
+      organizationCode: user.organization?.code,
+    });
 
     return {
-      user: {
-        id: user.id,
-        phone: user.phone,
-        fullName: user.fullName,
-        userType: user.userType,
-        avatarUrl: user.avatarUrl,
-        isActive: user.isActive,
-        lastLoginAt,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
-      activeOrganization: activeUO?.organization
-        ? {
-            orgId: activeUO.organization.id,
-            orgCode: activeUO.organization.code,
-            orgName: activeUO.organization.name,
-            titleName: activeUO.titleName,
-            roleCode: activeUO.role?.code,
-          }
-        : null,
-      organizations: userOrganizations.map((uo) => ({
-        id: uo.id,
-        orgId: uo.organization?.id,
-        orgCode: uo.organization?.code,
-        orgName: uo.organization?.name,
-        titleName: uo.titleName,
-        roleCode: uo.role?.code,
-        isPrimary: uo.isPrimary,
-        joinedAt: uo.joinedAt,
-      })),
-      permissions,
+      user: UserResponseMapper.toResponse(user),
       tokens,
     };
   }
@@ -157,53 +97,20 @@ export class AuthService {
   async getMe(userId: string): Promise<UserProfileResponse> {
     const user = await this.usersService.findById(userId);
     if (!user) {
-      throw new NotFoundException('Không tìm thấy thông tin tài khoản');
+      throw new NotFoundException('Không tìm thấy thông tin người dùng');
     }
 
     this.usersService.validateActive(user);
 
-    const userOrganizations =
-      await this.organizationsService.findUserOrganizations(user.id);
-    const activeUO =
-      userOrganizations.find((uo) => uo.isPrimary) ||
-      userOrganizations[0] ||
-      null;
-    const permissions = await this.rolesService.getUserPermissions(
-      user,
-      userOrganizations,
-    );
+    return UserResponseMapper.toResponse(user);
+  }
 
-    return {
-      id: user.id,
-      phone: user.phone,
-      fullName: user.fullName,
-      userType: user.userType,
-      avatarUrl: user.avatarUrl,
-      isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      activeOrganization: activeUO?.organization
-        ? {
-            orgId: activeUO.organization.id,
-            orgCode: activeUO.organization.code,
-            orgName: activeUO.organization.name,
-            titleName: activeUO.titleName,
-            roleCode: activeUO.role?.code,
-          }
-        : null,
-      organizations: userOrganizations.map((uo) => ({
-        id: uo.id,
-        orgId: uo.organization?.id,
-        orgCode: uo.organization?.code,
-        orgName: uo.organization?.name,
-        titleName: uo.titleName,
-        roleCode: uo.role?.code,
-        isPrimary: uo.isPrimary,
-        joinedAt: uo.joinedAt,
-      })),
-      permissions,
-    };
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileRequestDTO,
+  ): Promise<UserProfileResponse> {
+    await this.usersService.updateProfile(userId, dto);
+    return this.getMe(userId);
   }
 
   async changePassword(
@@ -212,17 +119,25 @@ export class AuthService {
   ): Promise<ChangePasswordResponse> {
     const user = await this.usersService.findByIdWithPassword(userId);
     if (!user) {
-      throw new NotFoundException('Không tìm thấy thông tin tài khoản');
+      throw new NotFoundException('Không tìm thấy thông tin người dùng');
     }
 
     this.usersService.validateActive(user);
 
-    const isOldPasswordValid = await this.passwordService.verify(
-      user.passwordHash,
+    await this.passwordService.verifyOrThrow(
       dto.oldPassword,
+      user.passwordHash,
+      'Mật khẩu hiện tại không chính xác',
     );
-    if (!isOldPasswordValid) {
-      throw new BadRequestException('Mật khẩu cũ không chính xác');
+
+    const isSamePassword = await this.passwordService.verify(
+      dto.newPassword,
+      user.passwordHash,
+    );
+    if (isSamePassword) {
+      throw new UnauthorizedException(
+        'Mật khẩu mới không được trùng với mật khẩu hiện tại',
+      );
     }
 
     const newPasswordHash = await this.passwordService.hash(dto.newPassword);
@@ -255,21 +170,13 @@ export class AuthService {
 
     this.usersService.validateActive(user);
 
-    const userOrganizations =
-      await this.organizationsService.findUserOrganizations(user.id);
-    const permissions = await this.rolesService.getUserPermissions(
-      user,
-      userOrganizations,
-    );
-
-    const tokens = await this.tokenService.generateTokens(
-      {
-        id: user.id,
-        phone: user.phone,
-        userType: user.userType,
-      },
-      permissions,
-    );
+    const tokens = await this.tokenService.generateTokens({
+      id: user.id,
+      phone: user.phone,
+      userType: user.userType,
+      organizationId: user.organizationId,
+      organizationCode: user.organization?.code,
+    });
 
     return tokens;
   }

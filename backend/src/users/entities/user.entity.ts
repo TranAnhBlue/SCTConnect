@@ -4,10 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
+  ManyToOne,
+  JoinColumn,
   Index,
 } from 'typeorm';
-import { UserOrganization } from '../../organizations/entities/user-organization.entity';
+import { Village } from '../../villages/entities/village.entity';
+import { Organization } from '../../organizations/entities/organization.entity';
 
 export enum UserType {
   CITIZEN = 'citizen',
@@ -27,6 +29,17 @@ export class User {
   @Column({ name: 'full_name', type: 'varchar', length: 255 })
   fullName!: string;
 
+  @Index('idx_users_village_id')
+  @Column({ name: 'village_id', type: 'uuid', nullable: true })
+  villageId!: string | null;
+
+  @ManyToOne(() => Village, (v) => v.users, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'village_id' })
+  village!: Village | null;
+
   @Column({ name: 'password_hash', type: 'text', select: false })
   passwordHash!: string;
 
@@ -38,13 +51,24 @@ export class User {
   })
   userType!: UserType | string;
 
-  @Column({ name: 'avatar_url', type: 'text', nullable: true })
-  avatarUrl!: string | null;
+  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
+  organizationId!: string | null;
+
+  @ManyToOne(() => Organization, (org) => org.users, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'organization_id' })
+  organization!: Organization | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @Column({ name: 'last_login_at', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'last_login_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   lastLoginAt!: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
@@ -52,7 +76,4 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt!: Date;
-
-  @OneToMany(() => UserOrganization, (userOrg) => userOrg.user)
-  userOrganizations!: UserOrganization[];
 }

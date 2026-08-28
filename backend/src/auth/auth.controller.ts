@@ -4,7 +4,6 @@ import {
   Get,
   Patch,
   Body,
-  UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -21,6 +20,7 @@ import {
   ChangePasswordResponseDTO,
   AuthTokensResponseDTO,
 } from './dto';
+import { UpdateProfileRequestDTO } from '../users/dto';
 import {
   RegisterResponse,
   LoginResponse,
@@ -33,14 +33,14 @@ import {
   ChangePasswordResponseSchema,
   AuthTokensResponseSchema,
 } from './schemas';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CurrentUser, ApiSuccessResponse } from '../common/decorators';
+import { CurrentUser, ApiSuccessResponse, Public } from '../common/decorators';
 
-@ApiTags('Xác thực & Phiên đăng nhập (Auth)')
+@ApiTags('Xác thực & Hồ sơ cá nhân (Auth)')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Đăng ký tài khoản công dân mới' })
@@ -56,6 +56,7 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập hệ thống (Công dân, Cán bộ, Admin)' })
@@ -68,6 +69,7 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Public()
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Làm mới phiên đăng nhập (Cấp Access Token mới)' })
@@ -83,7 +85,6 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy thông tin hồ sơ tài khoản đang đăng nhập' })
   @ApiSuccessResponse(
@@ -97,8 +98,23 @@ export class AuthController {
     return this.authService.getMe(userId);
   }
 
+  @Patch('profile')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cập nhật thông tin hồ sơ cá nhân' })
+  @ApiSuccessResponse(
+    UserProfileResponseDTO,
+    UserProfileResponseSchema,
+    'Cập nhật thông tin hồ sơ thành công',
+  )
+  async updateProfile(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateProfileRequestDTO,
+  ): Promise<UserProfileResponse> {
+    return this.authService.updateProfile(userId, dto);
+  }
+
   @Patch('change-password')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đổi mật khẩu tài khoản cá nhân' })

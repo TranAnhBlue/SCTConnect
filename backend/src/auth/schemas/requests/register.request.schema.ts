@@ -9,6 +9,8 @@ export const RegisterRequestSchema = z
       .trim()
       .min(2, 'Họ và tên phải có ít nhất 2 ký tự')
       .max(255, 'Họ và tên tối đa 255 ký tự'),
+    villageId: z.string().uuid('Vui lòng chọn Thôn / Tổ dân phố hợp lệ'),
+    organizationId: z.string().uuid().nullable().optional(),
     password: passwordSchema,
     confirmPassword: passwordSchema,
   })

@@ -5,16 +5,14 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersAdminService } from './services/users-admin.service';
-import { UsersService } from './services/users.service';
+import { UserType } from './entities/user.entity';
 import {
   QueryUsersRequestDTO,
   UpdateUserStatusRequestDTO,
-  UpdateProfileRequestDTO,
   UserResponseDTO,
   PaginatedUsersResponseDTO,
 } from './dto';
@@ -24,22 +22,20 @@ import {
   UserResponseSchema,
   PaginatedUsersResponseSchema,
 } from './schemas';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CurrentUser, ApiSuccessResponse } from '../common/decorators';
+import { CurrentUser, ApiSuccessResponse, Roles } from '../common/decorators';
 import type { AuthenticatedUser } from '../common/decorators';
 
-@ApiTags('Quản lý Người dùng & Hồ sơ (Users)')
+@ApiTags('Quản lý Người dùng Cấp Xã (Admin - Users)')
+@ApiBearerAuth()
+@Roles(UserType.ADMIN)
 @Controller('users')
 export class UsersController {
-  constructor(
-    private readonly usersAdminService: UsersAdminService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly usersAdminService: UsersAdminService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Lấy danh sách người dùng toàn xã (Admin / Quản trị)' })
+  @ApiOperation({
+    summary: 'Lấy danh sách người dùng toàn xã (Chỉ dành riêng cho Admin)',
+  })
   @ApiSuccessResponse(
     PaginatedUsersResponseDTO,
     PaginatedUsersResponseSchema,
@@ -51,26 +47,26 @@ export class UsersController {
     return this.usersAdminService.findAll(query);
   }
 
-  @Patch('me')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Cập nhật thông tin hồ sơ cá nhân' })
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Xem chi tiết hồ sơ người dùng theo ID (Chỉ dành riêng cho Admin)',
+  })
   @ApiSuccessResponse(
     UserResponseDTO,
     UserResponseSchema,
-    'Cập nhật thông tin hồ sơ thành công',
+    'Lấy thông tin người dùng thành công',
   )
-  async updateMe(
-    @CurrentUser('id') userId: string,
-    @Body() dto: UpdateProfileRequestDTO,
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<UserResponse> {
-    return this.usersService.updateProfile(userId, dto);
+    return this.usersAdminService.findOne(id);
   }
 
   @Patch(':id/status')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Khóa hoặc mở khóa tài khoản người dùng (Admin / Quản trị)' })
+  @ApiOperation({
+    summary:
+      'Khóa hoặc mở khóa tài khoản người dùng (Chỉ dành riêng cho Admin)',
+  })
   @ApiSuccessResponse(
     UserResponseDTO,
     UserResponseSchema,
@@ -81,25 +77,6 @@ export class UsersController {
     @Body() dto: UpdateUserStatusRequestDTO,
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<UserResponse> {
-    return this.usersAdminService.updateStatus(
-      id,
-      dto,
-      currentUser.id,
-    );
-  }
-
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Xem chi tiết hồ sơ người dùng theo ID' })
-  @ApiSuccessResponse(
-    UserResponseDTO,
-    UserResponseSchema,
-    'Lấy thông tin người dùng thành công',
-  )
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<UserResponse> {
-    return this.usersAdminService.findOne(id);
+    return this.usersAdminService.updateStatus(id, dto, currentUser.id);
   }
 }

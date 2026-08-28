@@ -2,28 +2,62 @@ import {
   Injectable,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserType } from '../entities/user.entity';
+import { Village } from '../../villages/entities/village.entity';
+import { Organization } from '../../organizations/entities/organization.entity';
 import { UserResponse } from '../schemas';
+import { UserResponseMapper } from '../mappers';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Village)
+    private readonly villagesRepository: Repository<Village>,
+    @InjectRepository(Organization)
+    private readonly organizationsRepository: Repository<Organization>,
   ) {}
 
   async createCitizen(
     phone: string,
     fullName: string,
+    villageId: string,
     passwordHash: string,
+    organizationId?: string | null,
   ): Promise<User> {
+    const village = await this.villagesRepository.findOne({
+      where: { id: villageId, isActive: true },
+    });
+
+    if (!village) {
+      throw new BadRequestException(
+        'Thôn / Tổ dân phố không tồn tại hoặc đã ngừng hoạt động',
+      );
+    }
+
+    if (organizationId) {
+      const org = await this.organizationsRepository.findOne({
+        where: { id: organizationId, isActive: true },
+      });
+
+      if (!org) {
+        throw new BadRequestException(
+          'Tổ chức / Hội đoàn thể không tồn tại hoặc đã ngừng hoạt động',
+        );
+      }
+    }
+
     const user = this.usersRepository.create({
       phone,
       fullName,
+      villageId,
       passwordHash,
+      organizationId: organizationId || null,
       userType: UserType.CITIZEN,
       isActive: true,
     });
@@ -34,12 +68,15 @@ export class UsersService {
   async findByPhone(phone: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { phone },
+      relations: { organization: true, village: true },
     });
   }
 
   async findForLogin(phone: string): Promise<User | null> {
     return this.usersRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.organization', 'organization')
+      .leftJoinAndSelect('user.village', 'village')
       .addSelect('user.passwordHash')
       .where('user.phone = :phone', { phone })
       .getOne();
@@ -48,12 +85,15 @@ export class UsersService {
   async findById(id: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { id },
+      relations: { organization: true, village: true },
     });
   }
 
   async findByIdWithPassword(id: string): Promise<User | null> {
     return this.usersRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.organization', 'organization')
+      .leftJoinAndSelect('user.village', 'village')
       .addSelect('user.passwordHash')
       .where('user.id = :id', { id })
       .getOne();
@@ -84,7 +124,11 @@ export class UsersService {
 
   async updateProfile(
     userId: string,
-    dto: { fullName?: string; avatarUrl?: string | null },
+    dto: {
+      fullName?: string;
+      villageId?: string;
+      organizationId?: string | null;
+    },
   ): Promise<UserResponse> {
     const user = await this.findById(userId);
 
@@ -100,8 +144,34 @@ export class UsersService {
       updateData.fullName = dto.fullName;
     }
 
-    if (dto.avatarUrl !== undefined) {
-      updateData.avatarUrl = dto.avatarUrl;
+    if (dto.villageId !== undefined) {
+      const village = await this.villagesRepository.findOne({
+        where: { id: dto.villageId, isActive: true },
+      });
+
+      if (!village) {
+        throw new BadRequestException(
+          'Thôn / Tổ dân phố không tồn tại hoặc đã ngừng hoạt động',
+        );
+      }
+
+      updateData.villageId = dto.villageId;
+    }
+
+    if (dto.organizationId !== undefined) {
+      if (dto.organizationId !== null) {
+        const org = await this.organizationsRepository.findOne({
+          where: { id: dto.organizationId, isActive: true },
+        });
+
+        if (!org) {
+          throw new BadRequestException(
+            'Tổ chức / Hội đoàn thể không tồn tại hoặc đã ngừng hoạt động',
+          );
+        }
+      }
+
+      updateData.organizationId = dto.organizationId;
     }
 
     if (Object.keys(updateData).length > 0) {
@@ -110,16 +180,6 @@ export class UsersService {
 
     const updatedUser = await this.findById(userId);
 
-    return {
-      id: updatedUser!.id,
-      phone: updatedUser!.phone,
-      fullName: updatedUser!.fullName,
-      userType: updatedUser!.userType,
-      avatarUrl: updatedUser!.avatarUrl,
-      isActive: updatedUser!.isActive,
-      lastLoginAt: updatedUser!.lastLoginAt,
-      createdAt: updatedUser!.createdAt,
-      updatedAt: updatedUser!.updatedAt,
-    };
+    return UserResponseMapper.toResponse(updatedUser!);
   }
 }

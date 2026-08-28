@@ -8,34 +8,36 @@ export class TokenService {
   private readonly jwtRefreshSecret: Uint8Array;
 
   constructor(private readonly configService: ConfigService) {
-    const jwtSecret = this.configService.get<string>(
-      'JWT_SECRET',
-      'default_secret_key_change_me',
-    );
-    const jwtRefreshSecret = this.configService.get<string>(
-      'JWT_REFRESH_SECRET',
-      'default_refresh_secret_key_change_me',
-    );
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('Biến môi trường JWT_SECRET chưa được cấu hình');
+    }
+
+    const jwtRefreshSecret =
+      this.configService.get<string>('JWT_REFRESH_SECRET');
+    if (!jwtRefreshSecret) {
+      throw new Error('Biến môi trường JWT_REFRESH_SECRET chưa được cấu hình');
+    }
 
     this.jwtSecret = new TextEncoder().encode(jwtSecret);
     this.jwtRefreshSecret = new TextEncoder().encode(jwtRefreshSecret);
   }
 
-  async generateTokens(
-    user: {
-      id: string;
-      phone: string;
-      userType: string;
-    },
-    permissions: string[] = [],
-  ) {
+  async generateTokens(user: {
+    id: string;
+    phone: string;
+    userType: string;
+    organizationId?: string | null;
+    organizationCode?: string | null;
+  }) {
     const now = Math.floor(Date.now() / 1000);
 
     const accessToken = await new SignJWT({
       sub: user.id,
       phone: user.phone,
       userType: user.userType,
-      permissions,
+      organizationId: user.organizationId || null,
+      organizationCode: user.organizationCode || null,
     })
       .setProtectedHeader({
         alg: 'HS256',

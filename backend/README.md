@@ -79,18 +79,3 @@ Chạy server ở chế độ phát triển:
 ```bash
 npm run start:dev
 ```
-
-Server sẽ khởi động tại:
-* 🚀 **API Endpoint:** `http://localhost:3000/api/v1`
-* 📚 **Tài liệu Swagger UI:** `http://localhost:3000/api/docs`
-
----
-
-## 📚 3. Danh Sách API Đã Triển Khai & Kiểm Thử
-
-Mở trình duyệt truy cập: 👉 **[http://localhost:3000/api/docs](http://localhost:3000/api/docs)**
-
-Hiện tại hệ thống đã triển khai sẵn các API:
-1. **`POST /api/v1/auth/register`** — Đăng ký tài khoản công dân mới (SĐT + Mật khẩu).
-2. **`POST /api/v1/auth/login`** — Đăng nhập hệ thống (nhận Access Token & Refresh Token).
-3. **`GET /api/v1/auth/me`** — Lấy thông tin hồ sơ tài khoản hiện tại (yêu cầu Bearer Token).

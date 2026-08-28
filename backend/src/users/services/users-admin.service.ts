@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { QueryUsersRequestDTO, UpdateUserStatusRequestDTO } from '../dto';
 import { UserResponse, PaginatedUsersResponse } from '../schemas';
+import { UserResponseMapper } from '../mappers';
 
 @Injectable()
 export class UsersAdminService {
@@ -29,43 +30,38 @@ export class UsersAdminService {
 
     const user = await this.usersRepository.findOne({
       where: { id: targetUserId },
+      relations: { organization: true, village: true },
     });
 
     if (!user) {
-      throw new NotFoundException('Không tìm thấy người dùng này trong hệ thống');
+      throw new NotFoundException(
+        'Không tìm thấy người dùng này trong hệ thống',
+      );
     }
 
     user.isActive = dto.isActive;
     const savedUser = await this.usersRepository.save(user);
 
-    return {
-      id: savedUser.id,
-      phone: savedUser.phone,
-      fullName: savedUser.fullName,
-      userType: savedUser.userType,
-      avatarUrl: savedUser.avatarUrl,
-      isActive: savedUser.isActive,
-      lastLoginAt: savedUser.lastLoginAt,
-      createdAt: savedUser.createdAt,
-      updatedAt: savedUser.updatedAt,
-    };
+    return UserResponseMapper.toResponse(savedUser);
   }
 
   async findAll(
     query: QueryUsersRequestDTO,
   ): Promise<PaginatedUsersResponse> {
-    const { page = 1, limit = 20, search, userType, isActive } = query;
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      villageId,
+      organizationId,
+      userType,
+      isActive,
+    } = query;
 
     const qb = this.usersRepository
       .createQueryBuilder('user')
-      .leftJoinAndSelect(
-        'user.userOrganizations',
-        'uo',
-        'uo.isPrimary = :isPrimary',
-        { isPrimary: true },
-      )
-      .leftJoinAndSelect('uo.organization', 'org')
-      .leftJoinAndSelect('uo.role', 'role')
+      .leftJoinAndSelect('user.organization', 'org')
+      .leftJoinAndSelect('user.village', 'village')
       .orderBy('user.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -75,6 +71,14 @@ export class UsersAdminService {
         '(user.phone ILIKE :search OR user.fullName ILIKE :search)',
         { search: `%${search}%` },
       );
+    }
+
+    if (villageId) {
+      qb.andWhere('user.villageId = :villageId', { villageId });
+    }
+
+    if (organizationId) {
+      qb.andWhere('user.organizationId = :organizationId', { organizationId });
     }
 
     if (userType) {
@@ -87,33 +91,8 @@ export class UsersAdminService {
 
     const [users, totalItems] = await qb.getManyAndCount();
 
-    const items = users.map((user) => {
-      const primaryUO = user.userOrganizations?.[0] || null;
-
-      return {
-        id: user.id,
-        phone: user.phone,
-        fullName: user.fullName,
-        userType: user.userType,
-        avatarUrl: user.avatarUrl,
-        isActive: user.isActive,
-        lastLoginAt: user.lastLoginAt,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        primaryOrganization: primaryUO?.organization
-          ? {
-              orgId: primaryUO.organization.id,
-              orgCode: primaryUO.organization.code,
-              orgName: primaryUO.organization.name,
-              titleName: primaryUO.titleName,
-              roleCode: primaryUO.role?.code,
-            }
-          : null,
-      };
-    });
-
     return {
-      items,
+      items: UserResponseMapper.toResponseList(users),
       pagination: {
         currentPage: page,
         pageSize: limit,
@@ -124,13 +103,10 @@ export class UsersAdminService {
   }
 
   async findOne(id: string): Promise<UserResponse> {
-    const user = await this.usersRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.userOrganizations', 'uo')
-      .leftJoinAndSelect('uo.organization', 'org')
-      .leftJoinAndSelect('uo.role', 'role')
-      .where('user.id = :id', { id })
-      .getOne();
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: { organization: true, village: true },
+    });
 
     if (!user) {
       throw new NotFoundException(
@@ -138,39 +114,6 @@ export class UsersAdminService {
       );
     }
 
-    const primaryUO =
-      user.userOrganizations?.find((uo) => uo.isPrimary) || null;
-
-    return {
-      id: user.id,
-      phone: user.phone,
-      fullName: user.fullName,
-      userType: user.userType,
-      avatarUrl: user.avatarUrl,
-      isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      primaryOrganization: primaryUO?.organization
-        ? {
-            orgId: primaryUO.organization.id,
-            orgCode: primaryUO.organization.code,
-            orgName: primaryUO.organization.name,
-            titleName: primaryUO.titleName,
-            roleCode: primaryUO.role?.code,
-          }
-        : null,
-      organizations:
-        user.userOrganizations?.map((uo) => ({
-          id: uo.id,
-          orgId: uo.organization?.id,
-          orgCode: uo.organization?.code,
-          orgName: uo.organization?.name,
-          titleName: uo.titleName,
-          roleCode: uo.role?.code,
-          isPrimary: uo.isPrimary,
-          joinedAt: uo.joinedAt,
-        })) || [],
-    };
+    return UserResponseMapper.toResponse(user);
   }
 }

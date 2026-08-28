@@ -12,18 +12,18 @@ export class PasswordService {
   }
 
   async verify(
+    plainPassword: string,
     passwordHash: string,
-    password: string,
   ): Promise<boolean> {
-    return argon2.verify(passwordHash, password);
+    return argon2.verify(passwordHash, plainPassword);
   }
 
   async verifyOrThrow(
+    plainPassword: string,
     passwordHash: string,
-    password: string,
     errorMessage = 'Số điện thoại hoặc mật khẩu không chính xác',
   ): Promise<void> {
-    const isValid = await this.verify(passwordHash, password);
+    const isValid = await this.verify(plainPassword, passwordHash);
     if (!isValid) {
       throw new UnauthorizedException(errorMessage);
     }

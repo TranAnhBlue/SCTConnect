@@ -4,11 +4,9 @@ import { AuthService } from './services/auth.service';
 import { PasswordService } from './services/password.service';
 import { TokenService } from './services/token.service';
 import { UsersModule } from '../users/users.module';
-import { OrganizationsModule } from '../organizations/organizations.module';
-import { RolesModule } from '../roles/roles.module';
 
 @Module({
-  imports: [UsersModule, OrganizationsModule, RolesModule],
+  imports: [UsersModule],
   controllers: [AuthController],
   providers: [AuthService, PasswordService, TokenService],
   exports: [AuthService, PasswordService, TokenService],
