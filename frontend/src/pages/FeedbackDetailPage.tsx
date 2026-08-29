@@ -2,123 +2,91 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { feedbackService } from '../services/feedbackService';
 import { useAuth } from '../context/AuthContext';
-import { IFeedback, FeedbackStatus, IUbndResponse } from '../types/api';
+import { IFeedback, FeedbackStatus } from '../types/api';
+import { useMessage } from '../hooks/useMessage';
 import {
   ArrowLeft,
   MapPin,
   Calendar,
-  Clock,
   CheckCircle2,
   AlertCircle,
   Tag,
   Users,
-  Send,
-  Star,
   FileCheck,
   Building,
-  User,
-  Phone,
-  MessageSquare
+  Clock,
+  XCircle,
+  Hourglass,
+  Image as ImageIcon
 } from 'lucide-react';
+
+const STATUS_CONFIG: Record<FeedbackStatus, { label: string; badgeClass: string; icon: React.ReactNode }> = {
+  pending: {
+    label: 'Chờ tiếp nhận',
+    badgeClass: 'badge-danger',
+    icon: <Hourglass size={14} />
+  },
+  received: {
+    label: 'Đã tiếp nhận',
+    badgeClass: 'badge-success',
+    icon: <CheckCircle2 size={14} />
+  },
+  rejected: {
+    label: 'Từ chối',
+    badgeClass: 'badge-neutral',
+    icon: <XCircle size={14} />
+  }
+};
 
 export const FeedbackDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { message } = useMessage();
+  const isCitizen = user.userType === 'citizen' || user.role === 'citizen';
+
   const [feedback, setFeedback] = useState<IFeedback | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Status update state
-  const [selectedStatus, setSelectedStatus] = useState<FeedbackStatus>('processing');
-  const [statusNote, setStatusNote] = useState('');
-  const [statusUpdating, setStatusUpdating] = useState(false);
-
-  // Official Response state
-  const [officialContent, setOfficialContent] = useState('');
-  const [documentNumber, setDocumentNumber] = useState('');
-  const [responseImageUrl, setResponseImageUrl] = useState('');
-  const [responseSubmitting, setResponseSubmitting] = useState(false);
-
-  // Citizen Rating state
-  const [rating, setRating] = useState(5);
-  const [ratingComment, setRatingComment] = useState('');
-  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      loadFeedback(id);
-    }
+    if (id) loadFeedback(id);
   }, [id]);
 
   const loadFeedback = async (feedbackId: string) => {
     setLoading(true);
     try {
-      const data = await feedbackService.getFeedbackById(feedbackId);
+      const data = isCitizen
+        ? await feedbackService.getMyFeedbackById(feedbackId)
+        : await feedbackService.getOfficerFeedbackById(feedbackId);
       setFeedback(data);
-      if (data?.status) setSelectedStatus(data.status);
-      if (data?.satisfactionRating) {
-        setRating(data.satisfactionRating);
-        setRatingComment(data.satisfactionComment || '');
-        setRatingSubmitted(true);
-      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateStatus = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateStatus = async (newStatus: 'received' | 'rejected') => {
     if (!feedback) return;
-    setStatusUpdating(true);
-    try {
-      const updated = await feedbackService.updateStatus(
-        feedback.id,
-        selectedStatus,
-        statusNote,
-        user.titleName ? `${user.titleName} - ${user.fullName}` : user.fullName
-      );
-      setFeedback(updated);
-      setStatusNote('');
-    } finally {
-      setStatusUpdating(false);
-    }
-  };
+    const label = newStatus === 'received' ? 'tiếp nhận' : 'từ chối';
+    if (!confirm(`Xác nhận ${label} phản ánh này?`)) return;
 
-  const handleSendOfficialResponse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!feedback) return;
-    setResponseSubmitting(true);
+    setActionLoading(true);
     try {
-      const responseData: IUbndResponse = {
-        officerName: user.fullName,
-        department: user.department || 'Ủy ban MTTQ Xã',
-        officialContent,
-        documentNumber,
-        responseDate: new Date().toLocaleString('vi-VN'),
-        resultImageUrl: responseImageUrl || undefined
-      };
-      const updated = await feedbackService.updateUbndResponse(feedback.id, responseData);
-      setFeedback(updated);
-      setOfficialContent('');
-      setDocumentNumber('');
+      const updated = await feedbackService.updateStatus(feedback.id, newStatus);
+      if (updated) {
+        setFeedback(updated);
+        message.success(`Đã ${label} phản ánh thành công`);
+      }
+    } catch (e: any) {
+      message.error(e?.response?.data?.message || `Không thể ${label} phản ánh`);
     } finally {
-      setResponseSubmitting(false);
+      setActionLoading(false);
     }
-  };
-
-  const handleRateSatisfaction = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!feedback) return;
-    try {
-      const updated = await feedbackService.rateSatisfaction(feedback.id, rating, ratingComment);
-      setFeedback(updated);
-      setRatingSubmitted(true);
-    } catch {}
   };
 
   if (loading) {
     return (
       <div className="loading-state">
-        <div className="spinner"></div>
+        <div className="spinner" />
         <p>Đang tải thông tin chi tiết phản ánh...</p>
       </div>
     );
@@ -136,48 +104,65 @@ export const FeedbackDetailPage: React.FC = () => {
     );
   }
 
-  const isOfficer = user.role !== 'citizen';
+  const statusInfo = STATUS_CONFIG[feedback.status as FeedbackStatus] || STATUS_CONFIG.pending;
 
   return (
     <div className="feedback-detail-page">
-      {/* Top Breadcrumb & Actions */}
+      {/* Breadcrumb & Status */}
       <div className="detail-top-nav">
         <Link to="/portal/feedbacks" className="back-link">
           <ArrowLeft size={16} />
-          <span>Danh sách phản ánh</span>
+          <span>{isCitizen ? 'Phản ánh của tôi' : 'Danh sách phản ánh'}</span>
         </Link>
         <div className="detail-top-badges">
-          <span className="code-pill">{feedback.reportCode}</span>
-          <span className={`badge badge-${feedback.status === 'done' ? 'success' : feedback.status === 'processing' ? 'warning' : 'danger'}`}>
-            {feedback.status === 'done' ? 'Đã hoàn thành' : feedback.status === 'processing' ? 'Đang xử lý' : 'Chờ tiếp nhận'}
+          <span className="code-pill">{feedback.code}</span>
+          <span className={`badge ${statusInfo.badgeClass}`} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {statusInfo.icon} {statusInfo.label}
           </span>
         </div>
       </div>
 
       <div className="detail-layout-grid">
-        {/* Left Column: Main Feedback Content */}
+        {/* Left: Main Content */}
         <div className="detail-main-col">
           {/* Header Card */}
           <div className="detail-card">
             <h1 className="detail-title">{feedback.title}</h1>
             <div className="detail-meta-row">
-              <span><MapPin size={14} /> {feedback.address}</span>
+              {feedback.incidentVillage && (
+                <span><MapPin size={14} /> {feedback.incidentVillage.name}</span>
+              )}
               <span><Calendar size={14} /> {new Date(feedback.createdAt).toLocaleDateString('vi-VN')}</span>
-              <span><Tag size={14} /> {feedback.category}</span>
+              {feedback.category && (
+                <span><Tag size={14} /> {feedback.category.name}</span>
+              )}
             </div>
 
             <div className="detail-description">
               <h3>Nội dung phản ánh</h3>
-              <p>{feedback.description}</p>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{feedback.content}</p>
             </div>
 
-            {feedback.imageUrls && feedback.imageUrls.length > 0 && (
+            {feedback.address && (
+              <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--paper)', borderRadius: 8 }}>
+                <strong><MapPin size={13} /> Địa chỉ cụ thể:</strong> {feedback.address}
+              </div>
+            )}
+
+            {/* Attachments */}
+            {feedback.attachments && feedback.attachments.length > 0 && (
               <div className="detail-photos">
-                <h3>Hình ảnh hiện trường ({feedback.imageUrls.length})</h3>
+                <h3><ImageIcon size={16} /> Hình ảnh đính kèm ({feedback.attachments.length})</h3>
                 <div className="photos-gallery">
-                  {feedback.imageUrls.map((url, idx) => (
-                    <a href={url} target="_blank" rel="noopener noreferrer" key={idx} className="photo-item">
-                      <img src={url} alt={`Ảnh minh chứng ${idx + 1}`} />
+                  {feedback.attachments.map((att, idx) => (
+                    <a
+                      key={att.id}
+                      href={att.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="photo-item"
+                    >
+                      <img src={att.fileUrl} alt={`Ảnh minh chứng ${idx + 1}`} />
                     </a>
                   ))}
                 </div>
@@ -185,226 +170,159 @@ export const FeedbackDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Official Response from MTTQ / UBND */}
-          {feedback.ubndResponse && (
-            <div className="detail-card response-card">
-              <div className="response-header">
-                <div className="response-icon">
-                  <Building size={24} />
+          {/* Status Banner for Citizen */}
+          {isCitizen && (
+            <div className={`detail-card ${feedback.status === 'received' ? 'response-card' : ''}`}
+              style={{ background: feedback.status === 'received' ? 'var(--success-soft)' : feedback.status === 'rejected' ? 'var(--neutral-soft, #f5f5f5)' : undefined }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ fontSize: 32 }}>
+                  {feedback.status === 'received' ? '✅' : feedback.status === 'rejected' ? '❌' : '⏳'}
                 </div>
                 <div>
-                  <h3>Kết quả giải quyết của cơ quan chức năng</h3>
-                  <p>
-                    {feedback.ubndResponse.department} — Cán bộ: <strong>{feedback.ubndResponse.officerName}</strong>
+                  <h3 style={{ margin: 0 }}>
+                    {feedback.status === 'received'
+                      ? 'Phản ánh đã được tiếp nhận!'
+                      : feedback.status === 'rejected'
+                      ? 'Phản ánh đã bị từ chối'
+                      : 'Đang chờ cơ quan chức năng tiếp nhận'}
+                  </h3>
+                  <p style={{ margin: '4px 0 0', color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
+                    {feedback.status === 'received'
+                      ? 'Cơ quan chức năng đã ghi nhận phản ánh của bạn và sẽ xử lý theo quy trình.'
+                      : feedback.status === 'rejected'
+                      ? 'Phản ánh này không đủ điều kiện tiếp nhận hoặc không thuộc thẩm quyền xử lý.'
+                      : 'Phản ánh của bạn đã được gửi thành công. Vui lòng chờ cơ quan tiếp nhận.'}
                   </p>
-                  {feedback.ubndResponse.documentNumber && (
-                    <span className="doc-num-badge">Số văn bản: {feedback.ubndResponse.documentNumber}</span>
-                  )}
                 </div>
               </div>
-
-              <div className="response-body">
-                <p>{feedback.ubndResponse.officialContent}</p>
-                <div className="response-date">
-                  <Clock size={13} /> {feedback.ubndResponse.responseDate}
-                </div>
-              </div>
-
-              {feedback.ubndResponse.resultImageUrl && (
-                <div className="response-result-image">
-                  <h4>Hình ảnh kết quả sau xử lý:</h4>
-                  <img src={feedback.ubndResponse.resultImageUrl} alt="Kết quả xử lý" />
-                </div>
-              )}
             </div>
           )}
 
-          {/* Citizen Satisfaction Rating */}
-          <div className="detail-card rating-card">
-            <h3>Đánh giá của người dân sau khi nhận kết quả</h3>
-            {!ratingSubmitted ? (
-              <form onSubmit={handleRateSatisfaction} className="rating-form">
-                <div className="star-select-row">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      className={`star-btn ${rating >= s ? 'filled' : ''}`}
-                      onClick={() => setRating(s)}
-                    >
-                      <Star size={24} fill={rating >= s ? '#DFA23A' : 'none'} />
-                    </button>
-                  ))}
-                  <span className="rating-label-text">
-                    {rating === 5 ? 'Rất hài lòng ⭐⭐⭐⭐⭐' : rating === 4 ? 'Hài lòng ⭐⭐⭐⭐' : `${rating} Sao`}
-                  </span>
-                </div>
-
-                <div className="form-group" style={{ marginTop: 12 }}>
-                  <input
-                    type="text"
-                    placeholder="Viết nhận xét hoặc lời cảm ơn gửi tới cán bộ xử lý..."
-                    value={ratingComment}
-                    onChange={(e) => setRatingComment(e.target.value)}
-                  />
-                </div>
-
-                <button type="submit" className="cta-btn">
-                  Gửi đánh giá mức độ hài lòng
-                </button>
-              </form>
-            ) : (
-              <div className="rating-result-box">
-                <div className="rating-stars">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      size={20}
-                      fill={(feedback.satisfactionRating || 5) >= s ? '#DFA23A' : 'none'}
-                      color="#DFA23A"
-                    />
-                  ))}
-                  <strong>{(feedback.satisfactionRating || 5)} / 5 Sao</strong>
-                </div>
-                {feedback.satisfactionComment && (
-                  <p className="rating-quote">"{feedback.satisfactionComment}"</p>
-                )}
-                <span className="text-success"><CheckCircle2 size={14} /> Cảm ơn bạn đã gửi đánh giá!</span>
-              </div>
-            )}
-          </div>
-
-          {/* Officer Management & Action Panel */}
-          {isOfficer && (
+          {/* Officer Action Panel */}
+          {!isCitizen && feedback.status === 'pending' && (
             <div className="detail-card officer-action-card">
               <div className="officer-card-title">
                 <FileCheck size={20} className="text-blue" />
-                <h3>Bảng điều khiển xử lý dành cho cán bộ</h3>
+                <h3>Hành động tiếp nhận</h3>
               </div>
-
-              {/* 1. Cập nhật trạng thái */}
-              <form onSubmit={handleUpdateStatus} className="status-update-form">
-                <h4>1. Cập nhật tiến độ xử lý</h4>
-                <div className="form-row-grid">
-                  <div className="form-group">
-                    <label>Trạng thái mới</label>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value as FeedbackStatus)}
-                    >
-                      <option value="pending">Chờ tiếp nhận</option>
-                      <option value="processing">Đang xử lý (Chuyển giao / Khảo sát)</option>
-                      <option value="done">Đã hoàn thành</option>
-                      <option value="rejected">Từ chối (Không thuộc thẩm quyền)</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Ghi chú tiến độ</label>
-                    <input
-                      type="text"
-                      placeholder="Ghi chú (VD: Đã cử cán bộ xuống hiện trường...)"
-                      value={statusNote}
-                      onChange={(e) => setStatusNote(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <button type="submit" className="cta-btn" disabled={statusUpdating}>
-                  {statusUpdating ? 'Đang lưu...' : 'Lưu cập nhật tiến độ'}
+              <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem', marginBottom: 16 }}>
+                Xem xét nội dung phản ánh và chọn tiếp nhận hoặc từ chối:
+              </p>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="cta-btn"
+                  disabled={actionLoading}
+                  onClick={() => handleUpdateStatus('received')}
+                  style={{ flex: 1 }}
+                >
+                  <CheckCircle2 size={16} />
+                  {actionLoading ? 'Đang xử lý...' : 'Tiếp nhận'}
                 </button>
-              </form>
-
-              <hr className="divider-line" />
-
-              {/* 2. Ban hành văn bản trả lời chính thức */}
-              <form onSubmit={handleSendOfficialResponse} className="official-response-form">
-                <h4>2. Ban hành văn bản trả lời người dân</h4>
-                <div className="form-group">
-                  <label>Số hiệu văn bản / Thông báo (nếu có)</label>
-                  <input
-                    type="text"
-                    placeholder="VD: 15/TB-MTTQ-TO"
-                    value={documentNumber}
-                    onChange={(e) => setDocumentNumber(e.target.value)}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Nội dung trả lời chi tiết *</label>
-                  <textarea
-                    rows={3}
-                    required
-                    placeholder="Nhập nội dung giải trình, phương án xử lý hoặc kết quả giải quyết chính thức..."
-                    value={officialContent}
-                    onChange={(e) => setOfficialContent(e.target.value)}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Link ảnh kết quả nghiệm thu sau xử lý</label>
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={responseImageUrl}
-                    onChange={(e) => setResponseImageUrl(e.target.value)}
-                  />
-                </div>
-                <button type="submit" className="cta-btn bg-success" disabled={responseSubmitting}>
-                  {responseSubmitting ? 'Đang gửi...' : 'Phê duyệt & Ban hành kết quả'}
+                <button
+                  type="button"
+                  className="cta-ghost"
+                  disabled={actionLoading}
+                  onClick={() => handleUpdateStatus('rejected')}
+                  style={{ flex: 1, borderColor: 'var(--danger, #e53e3e)', color: 'var(--danger, #e53e3e)' }}
+                >
+                  <XCircle size={16} />
+                  Từ chối
                 </button>
-              </form>
+              </div>
+            </div>
+          )}
+
+          {/* Officer already processed */}
+          {!isCitizen && feedback.status !== 'pending' && (
+            <div className="detail-card" style={{ background: 'var(--paper)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ink-soft)' }}>
+                {statusInfo.icon}
+                <span>Phản ánh này đã được <strong>{statusInfo.label.toLowerCase()}</strong></span>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right Column: Timeline & Meta Info */}
+        {/* Right: Sidebar Info */}
         <div className="detail-sidebar-col">
-          {/* Progress Timeline */}
+          {/* Status Timeline */}
           <div className="detail-card">
-            <h3>Lịch sử tiến trình</h3>
+            <h3>Trạng thái phản ánh</h3>
             <div className="history-timeline">
-              {feedback.statusHistory && feedback.statusHistory.map((h, i) => (
-                <div key={i} className="timeline-item">
-                  <div className="timeline-dot" />
-                  <div className="timeline-content">
-                    <div className="timeline-header">
-                      <strong>{h.status === 'done' ? 'Đã hoàn thành' : h.status === 'processing' ? 'Đang xử lý' : 'Chờ tiếp nhận'}</strong>
-                      <small>{new Date(h.changedAt).toLocaleDateString('vi-VN')}</small>
-                    </div>
-                    <span className="changed-by">{h.changedBy}</span>
-                    {h.note && <p className="timeline-note">{h.note}</p>}
+              {/* Step 1: Submitted */}
+              <div className="timeline-item">
+                <div className="timeline-dot" style={{ background: 'var(--blue)' }} />
+                <div className="timeline-content">
+                  <div className="timeline-header">
+                    <strong>Đã gửi phản ánh</strong>
+                    <small>{new Date(feedback.createdAt).toLocaleDateString('vi-VN')}</small>
                   </div>
+                  {feedback.user && (
+                    <span className="changed-by">{feedback.user.fullName}</span>
+                  )}
                 </div>
-              ))}
+              </div>
+
+              {/* Step 2: Status */}
+              <div className="timeline-item">
+                <div
+                  className="timeline-dot"
+                  style={{
+                    background: feedback.status === 'received'
+                      ? 'var(--success)'
+                      : feedback.status === 'rejected'
+                      ? 'var(--ink-soft)'
+                      : 'var(--warning, #d69e2e)'
+                  }}
+                />
+                <div className="timeline-content">
+                  <div className="timeline-header">
+                    <strong>{statusInfo.label}</strong>
+                    {feedback.updatedAt && feedback.status !== 'pending' && (
+                      <small>{new Date(feedback.updatedAt).toLocaleDateString('vi-VN')}</small>
+                    )}
+                  </div>
+                  {feedback.targetOrganization && (
+                    <span className="changed-by">{feedback.targetOrganization.name}</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Reporter & Assignment Card */}
+          {/* Metadata Card */}
           <div className="detail-card">
-            <h3>Thông tin phân công & Người gửi</h3>
+            <h3>Thông tin phản ánh</h3>
             <div className="meta-list">
-              <div className="meta-item">
-                <span className="meta-label">Người gửi:</span>
-                <strong>{feedback.isAnonymous ? 'Người dân ẩn danh' : feedback.reporterName || 'Trần Văn An'}</strong>
-              </div>
-              {!feedback.isAnonymous && feedback.reporterPhone && (
+              {feedback.user && (
                 <div className="meta-item">
-                  <span className="meta-label">Số điện thoại:</span>
-                  <span>{feedback.reporterPhone}</span>
+                  <span className="meta-label">Người gửi:</span>
+                  <strong>{feedback.user.fullName}</strong>
+                </div>
+              )}
+              {feedback.targetOrganization && (
+                <div className="meta-item">
+                  <span className="meta-label">Tổ chức tiếp nhận:</span>
+                  <strong>{feedback.targetOrganization.name}</strong>
+                </div>
+              )}
+              {feedback.incidentVillage && (
+                <div className="meta-item">
+                  <span className="meta-label">Thôn / Tổ dân phố:</span>
+                  <span>{feedback.incidentVillage.name}</span>
+                </div>
+              )}
+              {feedback.category && (
+                <div className="meta-item">
+                  <span className="meta-label">Lĩnh vực:</span>
+                  <span>{feedback.category.name}</span>
                 </div>
               )}
               <div className="meta-item">
-                <span className="meta-label">Tổ chức phụ trách:</span>
-                <strong>{feedback.departmentAssigned || 'Ủy ban MTTQ Xã'}</strong>
+                <span className="meta-label">Ngày gửi:</span>
+                <span>{new Date(feedback.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-              <div className="meta-item">
-                <span className="meta-label">Cán bộ phụ trách:</span>
-                <span>{feedback.assignedOfficerName || 'Đ/c Nguyễn Văn Minh'}</span>
-              </div>
-            </div>
-
-            <div className="chat-shortcut-btn">
-              <Link to="/portal/messages" className="cta-ghost full">
-                <MessageSquare size={16} />
-                <span>Nhắn tin với cán bộ xử lý</span>
-              </Link>
             </div>
           </div>
         </div>

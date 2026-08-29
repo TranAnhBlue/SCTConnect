@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BRAND_LOGO } from '../assets/images';
-import { LayoutDashboard, LogIn } from 'lucide-react';
+import { LogIn, UserPlus } from 'lucide-react';
 
 interface NavbarProps {
   onOpenContact: () => void;
@@ -35,13 +35,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenContact }) => {
         </nav>
 
         <div className="nav-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Link to="/portal/dashboard" className="cta-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <LayoutDashboard size={16} />
-            <span>Vào Cổng Dân Vận</span>
+          <Link to="/register" className="cta-btn" style={{ padding: '9px 18px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <UserPlus size={15} />
+            <span>Đăng ký</span>
           </Link>
 
-          <Link to="/login" className="cta-ghost" style={{ padding: '9px 16px' }}>
-            <LogIn size={15} style={{ marginRight: 4, display: 'inline' }} />
+          <Link to="/login" className="cta-ghost" style={{ padding: '9px 16px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <LogIn size={15} />
             <span>Đăng nhập</span>
           </Link>
         </div>
@@ -59,11 +59,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenContact }) => {
 
         {mobileMenuOpen && (
           <div className="mobile-drawer">
-            <Link to="/portal/dashboard" onClick={closeMobileMenu} style={{ fontWeight: 700, color: 'var(--blue)' }}>
-              ✦ Vào Cổng Dân Vận Số
+            <Link to="/register" onClick={closeMobileMenu} style={{ fontWeight: 700, color: 'var(--blue)' }}>
+              Đăng ký tài khoản
             </Link>
             <Link to="/login" onClick={closeMobileMenu}>
-              Đăng nhập tài khoản
+              Đăng nhập hệ thống
             </Link>
             <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '4px 0' }} />
             <a href="#gioi-thieu" onClick={closeMobileMenu}>Giới thiệu</a>

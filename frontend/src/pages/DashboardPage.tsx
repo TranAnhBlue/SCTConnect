@@ -2,59 +2,59 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { feedbackService } from '../services/feedbackService';
-import { receptionService } from '../services/receptionService';
-import { IFeedback, IFeedbackStats, ICitizenReception } from '../types/api';
+import { IFeedback, IFeedbackStatistics } from '../types/api';
 import {
   FileText,
   Clock,
   CheckCircle2,
-  AlertTriangle,
-  Smile,
+  XCircle,
   PlusCircle,
-  Calendar,
-  Users,
-  MapPin,
   ArrowRight,
-  TrendingUp,
-  ShieldCheck
+  Inbox,
+  BarChart3,
+  Send
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState<IFeedbackStats | null>(null);
+  const isCitizen = user.userType === 'citizen' || (user as any).role === 'citizen';
+
   const [recentFeedbacks, setRecentFeedbacks] = useState<IFeedback[]>([]);
-  const [receptions, setReceptions] = useState<ICitizenReception[]>([]);
+  const [stats, setStats] = useState<IFeedbackStatistics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadDashboardData() {
+    async function loadData() {
       setLoading(true);
       try {
-        const [statsData, feedbacksData, receptionsData] = await Promise.all([
-          feedbackService.getStats(),
-          feedbackService.getFeedbacks(),
-          receptionService.getReceptions()
-        ]);
-        setStats(statsData);
-        setRecentFeedbacks(feedbacksData.slice(0, 4));
-        setReceptions(receptionsData.slice(0, 3));
+        if (isCitizen) {
+          const result = await feedbackService.getMyFeedbacks({ page: 1, limit: 4 });
+          setRecentFeedbacks(result.items);
+        } else {
+          const [feedbacksResult, statsResult] = await Promise.all([
+            feedbackService.getOfficerFeedbacks({ page: 1, limit: 4 }),
+            feedbackService.getStatistics()
+          ]);
+          setRecentFeedbacks(feedbacksResult.items);
+          setStats(statsResult);
+        }
       } finally {
         setLoading(false);
       }
     }
-    loadDashboardData();
+    loadData();
   }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'done':
-        return <span className="badge badge-success">Đã xử lý</span>;
-      case 'processing':
-        return <span className="badge badge-warning">Đang xử lý</span>;
+      case 'received':
+        return <span className="badge badge-success"><CheckCircle2 size={11} /> Đã tiếp nhận</span>;
       case 'pending':
-        return <span className="badge badge-danger">Chờ tiếp nhận</span>;
+        return <span className="badge badge-danger"><Clock size={11} /> Chờ tiếp nhận</span>;
+      case 'rejected':
+        return <span className="badge badge-neutral"><XCircle size={11} /> Từ chối</span>;
       default:
-        return <span className="badge badge-neutral">Đã đóng</span>;
+        return <span className="badge badge-neutral">{status}</span>;
     }
   };
 
@@ -63,181 +63,188 @@ export const DashboardPage: React.FC = () => {
       {/* Welcome Banner */}
       <div className="welcome-banner">
         <div className="welcome-text">
-          <h2>Xin chào, {user.fullName}! 👋</h2>
+          <h2>Xin chào, {user?.fullName || 'Đồng chí'}! 👋</h2>
           <p>
-            Bạn đang đăng nhập với tư cách: <strong>{user.titleName || user.fullName}</strong> ({user.department || 'Xã Thanh Oai'}).
+            Bạn đang đăng nhập với tư cách:{' '}
+            <strong>
+              {user?.userType === 'admin'
+                ? 'Quản trị viên Toàn Xã'
+                : user?.userType === 'officer'
+                ? user.organization?.name || 'Cán bộ cơ sở'
+                : 'Công dân'}
+            </strong>
+            {user.village && <span> · {user.village.name}</span>}
           </p>
         </div>
-        <div className="welcome-actions">
-          <Link to="/portal/feedbacks/create" className="cta-btn">
-            <PlusCircle size={16} />
-            <span>Gửi phản ánh mới</span>
-          </Link>
-          <Link to="/portal/feedbacks" className="cta-ghost">
-            <FileText size={16} />
-            <span>Tra cứu hồ sơ</span>
-          </Link>
-        </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-icon bg-blue-soft">
-            <FileText size={22} className="text-blue" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Tổng phản ánh</span>
-            <div className="kpi-value">{stats?.total || 156}</div>
-            <span className="kpi-trend text-success"><TrendingUp size={12} /> +12% so với tháng trước</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon bg-warning-soft">
-            <Clock size={22} className="text-warning" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Đang xử lý</span>
-            <div className="kpi-value">{stats?.processing || 42}</div>
-            <span className="kpi-sub">Trong hạn xử lý</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon bg-success-soft">
-            <CheckCircle2 size={22} className="text-success" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Đã hoàn thành</span>
-            <div className="kpi-value">{stats?.done || 92}</div>
-            <span className="kpi-trend text-success">Đạt {stats?.resolutionRate || 94.2}% đúng hạn</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon bg-gold-soft">
-            <Smile size={22} className="text-gold" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Mức độ hài lòng</span>
-            <div className="kpi-value">{stats?.satisfactionAvg || 4.8} / 5.0 ⭐</div>
-            <span className="kpi-sub">Từ 112 lượt đánh giá</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Shortcuts */}
-      <div className="shortcuts-bar">
-        <Link to="/portal/feedbacks" className="shortcut-item">
-          <FileText size={18} />
-          <span>Danh sách phản ánh</span>
-        </Link>
-        <Link to="/portal/map" className="shortcut-item">
-          <MapPin size={18} />
-          <span>Bản đồ số phản ánh</span>
-        </Link>
-        <Link to="/portal/community" className="shortcut-item">
-          <Users size={18} />
-          <span>Bình chọn & Khảo sát</span>
-        </Link>
-        <Link to="/portal/receptions" className="shortcut-item">
-          <Calendar size={18} />
-          <span>Đặt lịch tiếp dân</span>
-        </Link>
-      </div>
-
-      {/* Two Column Layout: Feedbacks vs Charts & Receptions */}
-      <div className="dashboard-grid-2">
-        {/* Left: Recent Feedbacks */}
-        <div className="dash-card">
-          <div className="dash-card-header">
-            <div>
-              <h3>Phản ánh & Kiến nghị mới nhất</h3>
-              <p className="card-sub">Cập nhật theo thời gian thực từ ứng dụng và cổng web</p>
+      {/* KPI Cards - only for officer/admin */}
+      {!isCitizen && (
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <div className="kpi-icon bg-blue-soft">
+              <FileText size={22} className="text-blue" />
             </div>
-            <Link to="/portal/feedbacks" className="view-all-link">
-              Xem tất cả <ArrowRight size={14} />
+            <div className="kpi-content">
+              <span className="kpi-label">Tổng phản ánh</span>
+              <div className="kpi-value">{stats?.totalFeedbacks ?? 0}</div>
+              <span className="kpi-trend text-muted">Dữ liệu thời gian thực</span>
+            </div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-icon bg-warning-soft">
+              <Clock size={22} className="text-warning" />
+            </div>
+            <div className="kpi-content">
+              <span className="kpi-label">Chờ tiếp nhận</span>
+              <div className="kpi-value">{stats?.totalPending ?? 0}</div>
+              <span className="kpi-trend text-warning">
+                {stats?.totalPending ? 'Cần xử lý sớm' : 'Đã xử lý hết'}
+              </span>
+            </div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-icon bg-success-soft">
+              <CheckCircle2 size={22} className="text-success" />
+            </div>
+            <div className="kpi-content">
+              <span className="kpi-label">Đã tiếp nhận</span>
+              <div className="kpi-value">{stats?.totalReceived ?? 0}</div>
+              <span className="kpi-trend text-success">
+                {stats && stats.totalFeedbacks > 0
+                  ? `Tỷ lệ ${Math.round((stats.totalReceived / stats.totalFeedbacks) * 100)}%`
+                  : 'Chưa có dữ liệu'}
+              </span>
+            </div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-icon bg-paper">
+              <XCircle size={22} className="text-muted" />
+            </div>
+            <div className="kpi-content">
+              <span className="kpi-label">Từ chối</span>
+              <div className="kpi-value">{stats?.totalRejected ?? 0}</div>
+              <span className="kpi-trend text-muted">Không thuộc thẩm quyền</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Citizen Quick Actions — CHỈ 2 nút, KHÔNG có Cơ cấu tổ chức */}
+      {isCitizen && (
+        <div className="citizen-quick-actions">
+          <Link to="/portal/feedbacks/create" className="citizen-action-card citizen-action-primary">
+            <div className="citizen-action-icon">
+              <Send size={28} />
+            </div>
+            <div className="citizen-action-text">
+              <strong>Gửi phản ánh mới</strong>
+              <span>Kiến nghị, phản ánh đến cơ quan chức năng</span>
+            </div>
+            <ArrowRight size={18} className="citizen-action-arrow" />
+          </Link>
+          <Link to="/portal/feedbacks" className="citizen-action-card">
+            <div className="citizen-action-icon">
+              <FileText size={28} />
+            </div>
+            <div className="citizen-action-text">
+              <strong>Phản ánh của tôi</strong>
+              <span>Theo dõi trạng thái tiếp nhận</span>
+            </div>
+            <ArrowRight size={18} className="citizen-action-arrow" />
+          </Link>
+        </div>
+      )}
+
+      {/* Recent Feedbacks */}
+      <div className="card dashboard-card">
+        <div className="card-header">
+          <h3>
+            <FileText size={18} style={{ color: 'var(--blue)' }} />
+            <span>{isCitizen ? 'Phản ánh gần đây của tôi' : 'Phản ánh mới nhận'}</span>
+          </h3>
+          <Link to="/portal/feedbacks" className="view-all-link">
+            <span>Xem tất cả</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        <div className="card-body">
+          {loading ? (
+            <div style={{ padding: '36px 16px', textAlign: 'center', color: 'var(--ink-soft)' }}>
+              <div className="spinner" style={{ marginBottom: 8 }} />
+              <p>Đang tải...</p>
+            </div>
+          ) : recentFeedbacks.length === 0 ? (
+            <div style={{ padding: '40px 16px', textAlign: 'center' }}>
+              <Inbox size={48} style={{ color: 'var(--ink-soft)', opacity: 0.4, display: 'block', margin: '0 auto 12px' }} />
+              <p style={{ color: 'var(--ink-soft)', marginBottom: 16 }}>
+                {isCitizen ? 'Bạn chưa gửi phản ánh nào.' : 'Chưa có phản ánh kiến nghị nào.'}
+              </p>
+              <Link
+                to="/portal/feedbacks/create"
+                className="cta-btn"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <PlusCircle size={14} />
+                <span>Gửi phản ánh đầu tiên</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="recent-feedbacks-list">
+              {recentFeedbacks.map(fb => (
+                <Link to={`/portal/feedbacks/${fb.id}`} key={fb.id} className="recent-fb-item">
+                  <div className="recent-fb-main">
+                    <div className="recent-fb-code">{fb.code}</div>
+                    <h4 className="recent-fb-title">{fb.title}</h4>
+                    <p className="recent-fb-desc">{fb.content.slice(0, 100)}{fb.content.length > 100 ? '...' : ''}</p>
+                    <div className="recent-fb-meta">
+                      {fb.incidentVillage && <span>{fb.incidentVillage.name}</span>}
+                      <span>•</span>
+                      <span>{new Date(fb.createdAt).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                  </div>
+                  <div className="recent-fb-side">
+                    {getStatusBadge(fb.status)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Statistics breakdown for admin/officer */}
+      {!isCitizen && stats && stats.byOrganizations.length > 0 && (
+        <div className="card dashboard-card">
+          <div className="card-header">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <BarChart3 size={16} /> Phân bổ theo tổ chức
+            </h3>
+            <Link to="/portal/reports" className="view-all-link">
+              <span>Xem báo cáo đầy đủ</span>
+              <ArrowRight size={14} />
             </Link>
           </div>
-
-          <div className="dash-feedbacks-list">
-            {recentFeedbacks.map((fb) => (
-              <Link to={`/portal/feedbacks/${fb.id}`} key={fb.id} className="feedback-row-item">
-                <div className="fb-row-top">
-                  <span className="report-code">{fb.reportCode}</span>
-                  {getStatusBadge(fb.status)}
-                </div>
-                <h4 className="fb-row-title">{fb.title}</h4>
-                <div className="fb-row-meta">
-                  <span className="address-meta"><MapPin size={12} /> {fb.address}</span>
-                  <span className="date-meta">{new Date(fb.createdAt).toLocaleDateString('vi-VN')}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: Category Distribution & Receptions */}
-        <div className="dash-column-right">
-          {/* Category Breakdown */}
-          <div className="dash-card">
-            <div className="dash-card-header">
-              <div>
-                <h3>Phân bổ theo lĩnh vực</h3>
-                <p className="card-sub">Tỷ lệ phản ánh theo từng nhóm chuyên đề</p>
-              </div>
-            </div>
-
-            <div className="category-bars">
-              {stats?.byCategory.slice(0, 5).map((cat, idx) => {
-                const total = stats.total || 100;
-                const percent = Math.round((cat.count / total) * 100);
-                return (
-                  <div key={idx} className="cat-bar-item">
-                    <div className="cat-bar-header">
-                      <span>{cat.name}</span>
-                      <strong>{cat.count} việc ({percent}%)</strong>
-                    </div>
-                    <div className="progress-track">
-                      <div className="progress-fill" style={{ width: `${percent}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Upcoming Receptions */}
-          <div className="dash-card">
-            <div className="dash-card-header">
-              <div>
-                <h3>Lịch tiếp dân sắp tới</h3>
-                <p className="card-sub">Các phiên đối thoại trực tiếp với lãnh đạo</p>
-              </div>
-              <Link to="/portal/receptions" className="view-all-link">
-                Đặt lịch <ArrowRight size={14} />
-              </Link>
-            </div>
-
-            <div className="receptions-compact-list">
-              {receptions.map((rec) => (
-                <div key={rec.id} className="rec-compact-item">
-                  <div className="rec-date-badge">
-                    <Calendar size={14} />
-                    <span>{rec.receptionDate}</span>
-                  </div>
-                  <div className="rec-compact-content">
-                    <strong>{rec.citizenName} ({rec.citizenPhone})</strong>
-                    <p>{rec.topic}</p>
-                    <small>Cán bộ tiếp: {rec.hostLeaderName}</small>
-                  </div>
+          <div className="card-body">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {stats.byOrganizations.slice(0, 5).map(item => (
+                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ flex: 1, fontSize: '0.9rem' }}>{item.name}</div>
+                  <div style={{
+                    width: `${Math.max(8, (item.count / (stats.totalFeedbacks || 1)) * 120)}px`,
+                    height: 8, background: 'var(--blue)', borderRadius: 4
+                  }} />
+                  <div style={{ minWidth: 32, textAlign: 'right', fontWeight: 600, fontSize: '0.9rem' }}>{item.count}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,86 +1,92 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { feedbackService } from '../services/feedbackService';
+import { useAuth } from '../context/AuthContext';
 import { IFeedback, FeedbackStatus } from '../types/api';
 import {
   Search,
-  Filter,
   PlusCircle,
   MapPin,
-  Clock,
-  Eye,
   Calendar,
-  AlertCircle,
+  Eye,
   Tag,
-  Users
+  Users,
+  AlertCircle,
+  Clock,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 
+const STATUS_LABELS: Record<FeedbackStatus, { label: string; badge: string }> = {
+  pending: { label: 'Chờ tiếp nhận', badge: 'badge-danger' },
+  received: { label: 'Đã tiếp nhận', badge: 'badge-success' },
+  rejected: { label: 'Từ chối', badge: 'badge-neutral' }
+};
+
+const STATUS_TABS = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'pending', label: 'Chờ tiếp nhận' },
+  { key: 'received', label: 'Đã tiếp nhận' },
+  { key: 'rejected', label: 'Từ chối' }
+];
+
 export const FeedbacksListPage: React.FC = () => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const isCitizen = user.userType === 'citizen' || user.role === 'citizen';
+
   const [feedbacks, setFeedbacks] = useState<IFeedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [orgFilter, setOrgFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     loadFeedbacks();
-  }, [statusFilter, categoryFilter, orgFilter, searchQuery]);
+  }, [statusFilter, searchQuery, page]);
 
   const loadFeedbacks = async () => {
     setLoading(true);
     try {
-      const data = await feedbackService.getFeedbacks({
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        category: categoryFilter !== 'all' ? categoryFilter : undefined,
-        targetOrganization: orgFilter !== 'all' ? orgFilter : undefined,
+      const filters = {
+        page,
+        limit: 12,
+        status: statusFilter !== 'all' ? (statusFilter as FeedbackStatus) : undefined,
         search: searchQuery.trim() || undefined
-      });
-      setFeedbacks(data);
+      };
+
+      const result = isCitizen
+        ? await feedbackService.getMyFeedbacks(filters)
+        : await feedbackService.getOfficerFeedbacks(filters);
+
+      setFeedbacks(result.items);
+      setTotalPages(result.pagination.totalPages);
+      setTotalItems(result.pagination.totalItems);
     } finally {
       setLoading(false);
     }
   };
 
   const getStatusBadge = (status: FeedbackStatus) => {
-    switch (status) {
-      case 'done':
-        return <span className="badge badge-success">✓ Đã xử lý</span>;
-      case 'processing':
-        return <span className="badge badge-warning">⚡ Đang xử lý</span>;
-      case 'pending':
-        return <span className="badge badge-danger">⏳ Chờ tiếp nhận</span>;
-      case 'rejected':
-        return <span className="badge badge-neutral">✕ Từ chối</span>;
-    }
+    const { label, badge } = STATUS_LABELS[status] || { label: status, badge: 'badge-neutral' };
+    const Icon = status === 'received' ? CheckCircle2 : status === 'rejected' ? XCircle : Clock;
+    return (
+      <span className={`badge ${badge}`}>
+        <Icon size={11} style={{ marginRight: 3 }} /> {label}
+      </span>
+    );
   };
 
-  const getCategoryName = (cat: string) => {
-    const map: Record<string, string> = {
-      welfare: 'An sinh xã hội',
-      environment: 'Môi trường',
-      traffic: 'Giao thông',
-      supervision: 'Giám sát cộng đồng',
-      women_field: 'Hội Phụ nữ',
-      youth_field: 'Đoàn Thanh niên',
-      veterans_field: 'Hội Cựu chiến binh',
-      farmer_field: 'Hội Nông dân',
-      security: 'An ninh trật tự'
-    };
-    return map[cat] || cat;
+  const handleStatusFilter = (key: string) => {
+    setStatusFilter(key);
+    setPage(1);
   };
 
-  const getOrgName = (org?: string) => {
-    const map: Record<string, string> = {
-      mttq: 'Ủy ban MTTQ',
-      youth: 'Đoàn Thanh niên',
-      women: 'Hội Phụ nữ',
-      veterans: 'Hội Cựu chiến binh',
-      farmers: 'Hội Nông dân',
-      union: 'Công đoàn'
-    };
-    return org ? map[org] || org : 'Ủy ban MTTQ';
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(1);
   };
 
   return (
@@ -88,8 +94,12 @@ export const FeedbacksListPage: React.FC = () => {
       {/* Page Header */}
       <div className="page-header-row">
         <div>
-          <h2>Quản lý Phản ánh Kiến nghị</h2>
-          <p className="page-sub">Tiếp nhận, phân loại, phân công và giám sát kết quả xử lý ý kiến nhân dân</p>
+          <h2>{isCitizen ? 'Phản ánh của tôi' : 'Quản lý Phản ánh Kiến nghị'}</h2>
+          <p className="page-sub">
+            {isCitizen
+              ? `Danh sách các phản ánh bạn đã gửi (${totalItems} phản ánh)`
+              : 'Tiếp nhận, phân loại và xử lý ý kiến nhân dân'}
+          </p>
         </div>
         <Link to="/portal/feedbacks/create" className="cta-btn">
           <PlusCircle size={16} />
@@ -97,68 +107,33 @@ export const FeedbacksListPage: React.FC = () => {
         </Link>
       </div>
 
-      {/* Filter & Search Toolbar */}
+      {/* Search & Filters */}
       <div className="filter-card">
         <div className="search-bar">
           <Search size={18} className="search-icon" />
           <input
             type="text"
-            placeholder="Tìm kiếm theo tiêu đề, địa chỉ hoặc mã phản ánh (ví dụ: PA-20260814-001)..."
+            placeholder="Tìm kiếm theo tiêu đề hoặc mã phản ánh..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearch}
           />
           {searchQuery && (
-            <button type="button" className="clear-btn" onClick={() => setSearchQuery('')}>✕</button>
+            <button type="button" className="clear-btn" onClick={() => { setSearchQuery(''); setPage(1); }}>✕</button>
           )}
         </div>
 
-        {/* Filter Dropdowns */}
         <div className="filter-controls">
-          {/* Status Tabs */}
           <div className="status-tabs">
-            {[
-              { key: 'all', label: 'Tất cả' },
-              { key: 'pending', label: 'Chờ tiếp nhận' },
-              { key: 'processing', label: 'Đang xử lý' },
-              { key: 'done', label: 'Đã hoàn thành' }
-            ].map(tab => (
+            {STATUS_TABS.map(tab => (
               <button
                 key={tab.key}
                 type="button"
                 className={`tab-btn ${statusFilter === tab.key ? 'active' : ''}`}
-                onClick={() => setStatusFilter(tab.key)}
+                onClick={() => handleStatusFilter(tab.key)}
               >
                 {tab.label}
               </button>
             ))}
-          </div>
-
-          <div className="dropdown-filters">
-            <div className="select-group">
-              <Tag size={14} />
-              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="all">Tất cả lĩnh vực</option>
-                <option value="welfare">An sinh xã hội</option>
-                <option value="environment">Môi trường & Rác thải</option>
-                <option value="traffic">Giao thông - Đô thị</option>
-                <option value="supervision">Giám sát cộng đồng</option>
-                <option value="women_field">Công tác Phụ nữ</option>
-                <option value="youth_field">Thanh niên & Khởi nghiệp</option>
-                <option value="security">An ninh trật tự</option>
-              </select>
-            </div>
-
-            <div className="select-group">
-              <Users size={14} />
-              <select value={orgFilter} onChange={(e) => setOrgFilter(e.target.value)}>
-                <option value="all">Tất cả tổ chức phụ trách</option>
-                <option value="mttq">Ủy ban MTTQ Xã</option>
-                <option value="youth">Đoàn Thanh niên</option>
-                <option value="women">Hội Phụ nữ</option>
-                <option value="veterans">Hội Cựu chiến binh</option>
-                <option value="farmers">Hội Nông dân</option>
-              </select>
-            </div>
           </div>
         </div>
       </div>
@@ -166,62 +141,106 @@ export const FeedbacksListPage: React.FC = () => {
       {/* Feedbacks Grid */}
       {loading ? (
         <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Đang tải danh sách phản ánh kiến nghị...</p>
+          <div className="spinner" />
+          <p>Đang tải danh sách phản ánh...</p>
         </div>
       ) : feedbacks.length === 0 ? (
         <div className="empty-state">
           <AlertCircle size={44} className="text-muted" />
           <h3>Không tìm thấy phản ánh nào</h3>
-          <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
-          <button type="button" className="cta-ghost" onClick={() => { setStatusFilter('all'); setCategoryFilter('all'); setOrgFilter('all'); setSearchQuery(''); }}>
-            Đặt lại bộ lọc
-          </button>
+          <p>{isCitizen ? 'Bạn chưa gửi phản ánh nào.' : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'}</p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 12 }}>
+            <Link to="/portal/feedbacks/create" className="cta-btn">
+              <PlusCircle size={14} /> Gửi phản ánh đầu tiên
+            </Link>
+            {statusFilter !== 'all' && (
+              <button type="button" className="cta-ghost" onClick={() => handleStatusFilter('all')}>
+                Xem tất cả
+              </button>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="feedbacks-grid">
-          {feedbacks.map((fb) => (
-            <div key={fb.id} className="feedback-card">
-              <div className="fb-card-top">
-                <span className="code-pill">{fb.reportCode}</span>
-                {getStatusBadge(fb.status)}
-              </div>
+        <>
+          <div className="feedbacks-grid">
+            {feedbacks.map(fb => (
+              <div key={fb.id} className="feedback-card">
+                <div className="fb-card-top">
+                  <span className="code-pill">{fb.code}</span>
+                  {getStatusBadge(fb.status)}
+                </div>
 
-              <h3 className="fb-card-title">
-                <Link to={`/portal/feedbacks/${fb.id}`}>{fb.title}</Link>
-              </h3>
+                <h3 className="fb-card-title">
+                  <Link to={`/portal/feedbacks/${fb.id}`}>{fb.title}</Link>
+                </h3>
 
-              <p className="fb-card-desc">
-                {fb.description.length > 140 ? `${fb.description.slice(0, 140)}...` : fb.description}
-              </p>
+                <p className="fb-card-desc">
+                  {fb.content.length > 130 ? `${fb.content.slice(0, 130)}...` : fb.content}
+                </p>
 
-              {fb.imageUrls && fb.imageUrls.length > 0 && (
-                <div className="fb-card-media">
-                  <img src={fb.imageUrls[0]} alt={fb.title} />
-                  {fb.imageUrls.length > 1 && (
-                    <span className="more-photos">+{fb.imageUrls.length - 1} ảnh</span>
+                {fb.attachments && fb.attachments.length > 0 && (
+                  <div className="fb-card-media">
+                    <img src={fb.attachments[0].fileUrl} alt={fb.title} />
+                    {fb.attachments.length > 1 && (
+                      <span className="more-photos">+{fb.attachments.length - 1} ảnh</span>
+                    )}
+                  </div>
+                )}
+
+                <div className="fb-card-tags">
+                  {fb.category && (
+                    <span className="tag-pill bg-paper">
+                      <Tag size={11} /> {fb.category.name}
+                    </span>
+                  )}
+                  {fb.targetOrganization && (
+                    <span className="tag-pill bg-blue-soft">
+                      <Users size={11} /> {fb.targetOrganization.name}
+                    </span>
                   )}
                 </div>
-              )}
 
-              <div className="fb-card-tags">
-                <span className="tag-pill bg-paper"><Tag size={11} /> {getCategoryName(fb.category)}</span>
-                <span className="tag-pill bg-blue-soft"><Users size={11} /> {getOrgName(fb.targetOrganization)}</span>
-              </div>
-
-              <div className="fb-card-footer">
-                <div className="footer-meta">
-                  <span><MapPin size={12} /> {fb.address.split(',')[0]}</span>
-                  <span><Calendar size={12} /> {new Date(fb.createdAt).toLocaleDateString('vi-VN')}</span>
+                <div className="fb-card-footer">
+                  <div className="footer-meta">
+                    {fb.incidentVillage && (
+                      <span><MapPin size={12} /> {fb.incidentVillage.name}</span>
+                    )}
+                    <span><Calendar size={12} /> {new Date(fb.createdAt).toLocaleDateString('vi-VN')}</span>
+                  </div>
+                  <Link to={`/portal/feedbacks/${fb.id}`} className="view-btn">
+                    <span>Chi tiết</span>
+                    <Eye size={14} />
+                  </Link>
                 </div>
-                <Link to={`/portal/feedbacks/${fb.id}`} className="view-btn">
-                  <span>Chi tiết</span>
-                  <Eye size={14} />
-                </Link>
               </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="pagination-bar" style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 24 }}>
+              <button
+                type="button"
+                className="cta-ghost"
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+              >
+                ← Trước
+              </button>
+              <span style={{ display: 'flex', alignItems: 'center', color: 'var(--ink-soft)' }}>
+                Trang {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                className="cta-ghost"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+              >
+                Sau →
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

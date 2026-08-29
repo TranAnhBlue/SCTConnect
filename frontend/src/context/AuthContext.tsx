@@ -1,27 +1,34 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { IUser, UserRole } from '../types/api';
-import { MOCK_USERS } from '../services/mockData';
 import { authService } from '../services/authService';
 
 export interface RegisterPayload {
   fullName: string;
   phone: string;
-  password?: string;
-  confirmPassword?: string;
-  role?: UserRole;
-  email?: string;
+  villageId: string;
+  password: string;
+  confirmPassword: string;
+  organizationId?: string | null;
 }
 
 interface AuthContextType {
   user: IUser;
   token: string | null;
   isAuthenticated: boolean;
-  login: (phone: string, password?: string) => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
   register: (data: RegisterPayload) => Promise<void>;
   logout: () => void;
-  switchRole: (role: UserRole) => void;
   updateCurrentUser: (updates: Partial<IUser>) => void;
 }
+
+const DEFAULT_GUEST_USER: IUser = {
+  id: 'guest',
+  fullName: 'Công dân',
+  phone: '',
+  role: 'citizen',
+  userType: 'citizen',
+  titleName: 'Công dân'
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -29,26 +36,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<IUser>(() => {
     const saved = localStorage.getItem('sct_user');
     if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
+      try { return JSON.parse(saved); } catch {}
     }
-    // Default to MTTQ President for complete access to admin & workflow
-    return MOCK_USERS[0];
+    return DEFAULT_GUEST_USER;
   });
 
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('sct_token') || 'mock-jwt-token-sct';
+    return localStorage.getItem('sct_token') || null;
   });
 
   useEffect(() => {
-    localStorage.setItem('sct_user', JSON.stringify(user));
+    if (user && user.id !== 'guest') {
+      localStorage.setItem('sct_user', JSON.stringify(user));
+    }
     if (token) {
       localStorage.setItem('sct_token', token);
     }
   }, [user, token]);
 
-  const login = async (phone: string, password = 'Password@123') => {
+  const login = async (phone: string, password: string) => {
     const result = await authService.login(phone, password);
     setUser(result.user);
     setToken(result.token);
@@ -61,19 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('sct_user');
-    localStorage.removeItem('sct_token');
-    setUser(MOCK_USERS[4]); // Fallback to citizen role
+    authService.logout();
+    setUser(DEFAULT_GUEST_USER);
     setToken(null);
-  };
-
-  const switchRole = (role: UserRole) => {
-    const target = MOCK_USERS.find(u => u.role === role) || {
-      ...user,
-      role,
-      titleName: role === 'citizen' ? 'Công dân' : 'Cán bộ'
-    };
-    setUser(target);
   };
 
   const updateCurrentUser = (updates: Partial<IUser>) => {
@@ -85,11 +81,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         token,
-        isAuthenticated: !!user,
+        isAuthenticated: !!token && user.id !== 'guest',
         login,
         register,
         logout,
-        switchRole,
         updateCurrentUser
       }}
     >

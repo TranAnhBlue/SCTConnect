@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { BRAND_LOGO } from '../assets/images';
 
 interface HeroProps {
@@ -35,13 +36,12 @@ export const Hero: React.FC<HeroProps> = ({ onOpenContact }) => {
           </ul>
 
           <div className="hero-ctas">
-            <button
-              type="button"
+            <Link
+              to="/register"
               className="cta-btn"
-              onClick={onOpenContact}
             >
               Đăng ký dùng thử miễn phí
-            </button>
+            </Link>
             <button
               type="button"
               className="cta-ghost"

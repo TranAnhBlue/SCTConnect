@@ -119,7 +119,9 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-row">
-                  <label htmlFor="cf-name">Họ và tên *</label>
+                  <label htmlFor="cf-name">
+                    Họ và tên <span className="req">*</span>
+                  </label>
                   <input
                     id="cf-name"
                     ref={nameInputRef}
@@ -132,7 +134,9 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
                   />
                 </div>
                 <div className="form-row">
-                  <label htmlFor="cf-phone">Số điện thoại *</label>
+                  <label htmlFor="cf-phone">
+                    Số điện thoại <span className="req">*</span>
+                  </label>
                   <input
                     id="cf-phone"
                     type="tel"

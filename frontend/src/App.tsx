@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { PortalLayout } from './layouts/PortalLayout';
 
 import { LandingPage } from './pages/LandingPage';
@@ -9,42 +9,83 @@ import { DashboardPage } from './pages/DashboardPage';
 import { FeedbacksListPage } from './pages/FeedbacksListPage';
 import { CreateFeedbackPage } from './pages/CreateFeedbackPage';
 import { FeedbackDetailPage } from './pages/FeedbackDetailPage';
-import { FeedbackMapPage } from './pages/FeedbackMapPage';
+import { AdministrativePage } from './pages/AdministrativePage';
 import { ReportsPage } from './pages/ReportsPage';
-import { CommunityPage } from './pages/CommunityPage';
-import { ReceptionsPage } from './pages/ReceptionsPage';
-import { ServicesPage } from './pages/ServicesPage';
-import { MessagesPage } from './pages/MessagesPage';
-import { NotificationsPage } from './pages/NotificationsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { UsersManagementPage } from './pages/UsersManagementPage';
+
+// Route Guard bảo vệ theo quyền Admin / Cán bộ
+const OfficerOrAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.userType === 'admin';
+  const isOfficer = user?.userType === 'officer';
+  if (!isAdmin && !isOfficer) {
+    return <Navigate to="/portal/dashboard" replace />;
+  }
+  return <>{children}</>;
+};
+
+const AdminOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.userType === 'admin';
+  if (!isAdmin) {
+    return <Navigate to="/portal/dashboard" replace />;
+  }
+  return <>{children}</>;
+};
 
 export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Landing Page */}
+          {/* Public */}
           <Route path="/" element={<LandingPage />} />
-
-          {/* Authentication Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Administrative and Citizen Web Portal */}
+          {/* Portal */}
           <Route path="/portal" element={<PortalLayout />}>
             <Route index element={<Navigate to="/portal/dashboard" replace />} />
+
+            {/* Dùng chung cho tất cả các role đã đăng nhập */}
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="feedbacks" element={<FeedbacksListPage />} />
             <Route path="feedbacks/create" element={<CreateFeedbackPage />} />
             <Route path="feedbacks/:id" element={<FeedbackDetailPage />} />
-            <Route path="map" element={<FeedbackMapPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="community" element={<CommunityPage />} />
-            <Route path="receptions" element={<ReceptionsPage />} />
-            <Route path="services" element={<ServicesPage />} />
-            <Route path="messages" element={<MessagesPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="profile" element={<ProfilePage />} />
+
+            {/* Dành cho Cán bộ cơ sở & Quản trị viên: Quản trị Tổ chức & Địa bàn cấp xã */}
+            <Route
+              path="administrative"
+              element={
+                <OfficerOrAdminRoute>
+                  <AdministrativePage />
+                </OfficerOrAdminRoute>
+              }
+            />
+            {/* Tương thích ngược: Nếu ai bấm /organizations thì chuyển về /administrative */}
+            <Route path="organizations" element={<Navigate to="/portal/administrative" replace />} />
+            <Route path="catalog" element={<Navigate to="/portal/administrative" replace />} />
+
+            <Route
+              path="reports"
+              element={
+                <OfficerOrAdminRoute>
+                  <ReportsPage />
+                </OfficerOrAdminRoute>
+              }
+            />
+
+            {/* Dành độc quyền cho Quản trị viên (Admin): Quản lý tài khoản toàn xã */}
+            <Route
+              path="users"
+              element={
+                <AdminOnlyRoute>
+                  <UsersManagementPage />
+                </AdminOnlyRoute>
+              }
+            />
           </Route>
 
           {/* Fallback */}

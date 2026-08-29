@@ -1,171 +1,146 @@
 import apiClient from './api';
 import { IUser, UserRole } from '../types/api';
-import { MOCK_USERS } from './mockData';
+
+// Map userType to a display-friendly role
+function mapUserTypeToRole(userType: string): UserRole {
+  if (userType === 'admin') return 'mttq_president';
+  if (userType === 'officer') return 'mttq_officer';
+  return 'citizen';
+}
+
+function mapProfileToUser(raw: any): IUser {
+  return {
+    id: raw.id,
+    fullName: raw.fullName,
+    phone: raw.phone,
+    role: mapUserTypeToRole(raw.userType),
+    userType: raw.userType,
+    villageId: raw.villageId || null,
+    village: raw.village || null,
+    organizationId: raw.organizationId || null,
+    organization: raw.organization || null,
+    titleName:
+      raw.userType === 'admin'
+        ? 'Quản trị viên Toàn Xã'
+        : raw.userType === 'officer'
+        ? raw.organization?.name || 'Cán bộ cơ sở'
+        : 'Công dân',
+    department:
+      raw.userType === 'admin'
+        ? 'Ủy ban MTTQ Xã'
+        : raw.organization?.name || raw.village?.name || '',
+    isActive: raw.isActive,
+    lastLoginAt: raw.lastLoginAt || null,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt
+  };
+}
 
 export const authService = {
-  async login(phone: string, password = 'Password@123'): Promise<{ user: IUser; token: string }> {
-    try {
-      const res = await apiClient.post('/auth/login', { phone, password });
-      const resData = res.data?.data;
-      if (resData?.user) {
-        const rawUser = resData.user;
-        const activeOrg = resData.activeOrganization;
-        const token = resData.tokens?.accessToken || resData.token || 'mock-jwt-token-sct';
-
-        // Map backend user to Frontend IUser
-        let role: UserRole = 'citizen';
-        if (rawUser.userType === 'officer' || activeOrg) {
-          const orgCode = activeOrg?.orgCode || '';
-          if (orgCode.includes('youth')) role = 'youth_leader';
-          else if (orgCode.includes('women')) role = 'women_leader';
-          else if (orgCode.includes('veteran')) role = 'veteran_leader';
-          else if (orgCode.includes('mttq')) role = 'mttq_president';
-          else role = 'mttq_officer';
-        }
-
-        const normalizedUser: IUser = {
-          id: rawUser.id,
-          fullName: rawUser.fullName,
-          phone: rawUser.phone,
-          email: rawUser.email || `${rawUser.phone}@sctconnect.vn`,
-          role: role,
-          userType: rawUser.userType || (role === 'citizen' ? 'citizen' : 'officer'),
-          titleName: activeOrg?.titleName || (role === 'citizen' ? 'Công dân' : 'Cán bộ cơ sở'),
-          department: activeOrg?.orgName || 'Ủy ban Mặt trận Tổ quốc Xã Thanh Oai',
-          commune: 'Xã Thanh Oai',
-          district: 'Huyện Thanh Oai',
-          avatarUrl: rawUser.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-          activeOrganization: activeOrg,
-          organizations: resData.organizations,
-          permissions: resData.permissions,
-          isVerified: true
-        };
-
-        return { user: normalizedUser, token };
-      }
-    } catch (e) {
-      console.warn('API login failed, using fallback mock user', e);
+  async login(phone: string, password: string): Promise<{ user: IUser; token: string }> {
+    const res = await apiClient.post('/auth/login', { phone, password });
+    const resData = res.data?.data;
+    if (!resData?.user) {
+      throw new Error(res.data?.message || 'Đăng nhập thất bại');
     }
 
-    // Fallback search in mock users
-    const found = MOCK_USERS.find(u => u.phone === phone) || MOCK_USERS[0];
-    return {
-      user: found,
-      token: 'mock-jwt-token-sct'
-    };
+    const token = resData.tokens?.accessToken;
+    if (!token) throw new Error('Không nhận được mã xác thực (Token)');
+
+    if (resData.tokens?.refreshToken) {
+      localStorage.setItem('sct_refresh_token', resData.tokens.refreshToken);
+    }
+
+    return { user: mapProfileToUser(resData.user), token };
   },
 
   async register(data: {
     fullName: string;
     phone: string;
-    password?: string;
-    confirmPassword?: string;
-    role?: UserRole;
-    email?: string;
+    villageId: string;
+    password: string;
+    confirmPassword: string;
+    organizationId?: string | null;
   }): Promise<{ user: IUser; token: string }> {
-    const password = data.password || 'Password@123';
-    const confirmPassword = data.confirmPassword || password;
+    const res = await apiClient.post('/auth/register', {
+      phone: data.phone,
+      fullName: data.fullName,
+      villageId: data.villageId,
+      password: data.password,
+      confirmPassword: data.confirmPassword,
+      organizationId: data.organizationId || undefined
+    });
 
-    try {
-      const res = await apiClient.post('/auth/register', {
-        phone: data.phone,
-        fullName: data.fullName,
-        password,
-        confirmPassword
-      });
-
-      const resData = res.data?.data;
-      if (resData?.user) {
-        const rawUser = resData.user;
-        const token = resData.tokens?.accessToken || resData.token || 'mock-jwt-token-sct';
-
-        const newUser: IUser = {
-          id: rawUser.id,
-          fullName: rawUser.fullName,
-          phone: rawUser.phone,
-          email: data.email || `${rawUser.phone}@sctconnect.vn`,
-          role: data.role || 'citizen',
-          userType: rawUser.userType || 'citizen',
-          titleName: data.role === 'citizen' ? 'Công dân' : 'Cán bộ',
-          department: 'Xã Thanh Oai',
-          commune: 'Xã Thanh Oai',
-          district: 'Huyện Thanh Oai',
-          isVerified: true
-        };
-
-        return { user: newUser, token };
-      }
-    } catch (e) {
-      console.warn('API register failed, using fallback mock user', e);
+    const resData = res.data?.data;
+    if (!resData?.user) {
+      throw new Error(res.data?.message || 'Đăng ký thất bại');
     }
 
-    const newUser: IUser = {
-      id: `u-${Date.now()}`,
-      fullName: data.fullName || 'Công dân mới',
-      phone: data.phone || '0988123456',
-      email: data.email || 'user@sctconnect.vn',
-      role: data.role || 'citizen',
-      userType: 'citizen',
-      titleName: 'Công dân',
-      department: 'Xã Thanh Oai',
-      commune: 'Xã Thanh Oai',
-      district: 'Huyện Thanh Oai',
-      isVerified: true
-    };
+    const token = resData.tokens?.accessToken;
+    if (!token) throw new Error('Không nhận được mã xác thực (Token)');
 
-    return {
-      user: newUser,
-      token: 'mock-jwt-token-sct'
-    };
+    if (resData.tokens?.refreshToken) {
+      localStorage.setItem('sct_refresh_token', resData.tokens.refreshToken);
+    }
+
+    return { user: mapProfileToUser(resData.user), token };
   },
 
-  async getProfile(): Promise<IUser> {
+  async refreshToken(): Promise<string | null> {
+    const refreshToken = localStorage.getItem('sct_refresh_token');
+    if (!refreshToken) return null;
+
+    try {
+      const res = await apiClient.post('/auth/refresh-token', { refreshToken });
+      const tokens = res.data?.data;
+      if (tokens?.accessToken) {
+        localStorage.setItem('sct_token', tokens.accessToken);
+        if (tokens.refreshToken) {
+          localStorage.setItem('sct_refresh_token', tokens.refreshToken);
+        }
+        return tokens.accessToken;
+      }
+    } catch {
+      localStorage.removeItem('sct_token');
+      localStorage.removeItem('sct_refresh_token');
+    }
+    return null;
+  },
+
+  async logout(): Promise<void> {
+    localStorage.removeItem('sct_user');
+    localStorage.removeItem('sct_token');
+    localStorage.removeItem('sct_refresh_token');
+  },
+
+  async getProfile(): Promise<IUser | null> {
     try {
       const res = await apiClient.get('/auth/me');
-      const resData = res.data?.data;
-      if (resData) {
-        const activeOrg = resData.activeOrganization;
-        let role: UserRole = 'citizen';
-        if (resData.userType === 'officer' || activeOrg) {
-          const orgCode = activeOrg?.orgCode || '';
-          if (orgCode.includes('youth')) role = 'youth_leader';
-          else if (orgCode.includes('women')) role = 'women_leader';
-          else if (orgCode.includes('veteran')) role = 'veteran_leader';
-          else if (orgCode.includes('mttq')) role = 'mttq_president';
-          else role = 'mttq_officer';
-        }
-
-        return {
-          id: resData.id,
-          fullName: resData.fullName,
-          phone: resData.phone,
-          email: `${resData.phone}@sctconnect.vn`,
-          role,
-          userType: resData.userType,
-          titleName: activeOrg?.titleName || (role === 'citizen' ? 'Công dân' : 'Cán bộ cơ sở'),
-          department: activeOrg?.orgName || 'Ủy ban MTTQ Xã Thanh Oai',
-          commune: 'Xã Thanh Oai',
-          district: 'Huyện Thanh Oai',
-          avatarUrl: resData.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-          activeOrganization: activeOrg,
-          organizations: resData.organizations,
-          permissions: resData.permissions,
-          isVerified: true
-        };
-      }
+      const raw = res.data?.data;
+      if (raw) return mapProfileToUser(raw);
     } catch (e) {
-      console.warn('API getProfile failed, using fallback', e);
+      console.error('Lỗi khi lấy thông tin hồ sơ', e);
     }
-    return MOCK_USERS[0];
+    return null;
   },
 
-  async updateProfile(id: string, updates: Partial<IUser>): Promise<IUser> {
-    try {
-      const res = await apiClient.put(`/auth/profile/${id}`, updates);
-      if (res.data?.data) return res.data.data;
-    } catch (e) {
-      console.warn('API updateProfile failed, using fallback', e);
-    }
-    return { ...MOCK_USERS[0], ...updates };
+  async updateProfile(data: {
+    fullName?: string;
+    villageId?: string;
+    organizationId?: string | null;
+  }): Promise<IUser | null> {
+    const res = await apiClient.patch('/auth/profile', data);
+    const raw = res.data?.data;
+    if (raw) return mapProfileToUser(raw);
+    return null;
+  },
+
+  async changePassword(data: {
+    oldPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
+  }): Promise<{ success: boolean; message: string }> {
+    const res = await apiClient.patch('/auth/change-password', data);
+    return res.data?.data || { success: true, message: 'Đổi mật khẩu thành công' };
   }
 };

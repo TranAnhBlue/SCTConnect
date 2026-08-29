@@ -61,7 +61,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     }
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     if (cleanPhone.length < 9 || cleanPhone.length > 11) {
-      Alert.alert('Số điện thoại không hợp lệ', 'Vui lòng nhập số điện thoại chính xác (10 số).');
+      Alert.alert('Số điện thoại không hợp lệ', 'Vui lòng nhập số điện thoại chính xác.');
       return;
     }
     if (!password) {
@@ -128,7 +128,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#B71C1C" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity

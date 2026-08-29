@@ -19,8 +19,8 @@ const mapRawUser = (rawUser: any, fallbackRole?: MttqRole, fallbackName?: string
     organization: (rawUser.organization as MemberOrganization) || fallbackOrg || (isOfficer ? 'mttq' : undefined),
     titleName: rawUser.titleName || fallbackTitle || (isOfficer ? 'Lãnh đạo Mặt trận Xã' : 'Công dân'),
     department: rawUser.department || fallbackDept || 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
-    commune: rawUser.commune || 'Ủy ban MTTQ Xã Thanh Oai',
-    district: rawUser.district || 'Huyện Thanh Oai',
+    commune: rawUser.commune || 'Ủy ban MTTQ Thuận An',
+    district: rawUser.district || 'Thành phố Thuận An',
     avatarUrl: rawUser.avatarUrl || (isOfficer ? 'https://picsum.photos/seed/mttq_officer/200/200' : 'https://picsum.photos/seed/citizen/200/200'),
   };
 };
@@ -68,8 +68,8 @@ export const authService = {
         organization: org || (isOfficer ? 'mttq' : undefined),
         titleName: titleName || (isOfficer ? 'Chủ tịch Ủy ban MTTQ Việt Nam Xã' : 'Công dân'),
         department: dept || 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
-        commune: 'Ủy ban MTTQ Xã Thanh Oai',
-        district: 'Huyện Thanh Oai',
+        commune: 'Ủy ban MTTQ Thuận An',
+        district: 'Thành phố Thuận An',
         avatarUrl: isOfficer ? 'https://picsum.photos/seed/mttq_officer/200/200' : 'https://picsum.photos/seed/citizen/200/200',
       };
       return {

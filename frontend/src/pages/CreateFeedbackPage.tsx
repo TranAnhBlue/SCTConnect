@@ -1,69 +1,163 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { feedbackService } from '../services/feedbackService';
-import { useAuth } from '../context/AuthContext';
-import { FeedbackCategory, OrganizationType, FeedbackPriority } from '../types/api';
+import { villageService } from '../services/villageService';
+import { categoryService } from '../services/categoryService';
+import { organizationService } from '../services/organizationService';
+import { uploadService } from '../services/uploadService';
+import { IVillage, ICategory, IOrganization } from '../types/api';
+import { useMessage } from '../hooks/useMessage';
 import {
   Upload,
   MapPin,
   Tag,
   Users,
-  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  X,
+  Loader2
 } from 'lucide-react';
 
 export const CreateFeedbackPage: React.FC = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [address, setAddress] = useState('Thôn 2, Xã Thanh Oai, Huyện Thanh Oai, Hà Nội');
-  const [category, setCategory] = useState<FeedbackCategory>('welfare');
-  const [targetOrganization, setTargetOrganization] = useState<OrganizationType>('mttq');
-  const [priority, setPriority] = useState<FeedbackPriority>('normal');
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [reporterName, setReporterName] = useState(user.fullName || '');
-  const [reporterPhone, setReporterPhone] = useState(user.phone || '');
-  const [imageUrls, setImageUrls] = useState<string[]>([
-    'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&h=400&fit=crop'
-  ]);
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { message } = useMessage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddImage = () => {
-    if (newImageUrl.trim()) {
-      setImageUrls(prev => [...prev, newImageUrl.trim()]);
-      setNewImageUrl('');
+  const [villages, setVillages] = useState<IVillage[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [organizations, setOrganizations] = useState<IOrganization[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [address, setAddress] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [targetOrganizationId, setTargetOrganizationId] = useState('');
+  const [incidentVillageId, setIncidentVillageId] = useState('');
+
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [createdCode, setCreatedCode] = useState('');
+
+  useEffect(() => {
+    Promise.all([
+      villageService.getVillages(),
+      categoryService.getCategories(),
+      organizationService.getList()
+    ]).then(([v, c, o]) => {
+      setVillages(v);
+      setCategories(c);
+      setOrganizations(o);
+      if (c.length > 0) setCategoryId(c[0].id);
+      if (o.length > 0) setTargetOrganizationId(o[0].id);
+      if (v.length > 0) setIncidentVillageId(v[0].id);
+      setDataLoading(false);
+    });
+  }, []);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      message.error('Ảnh tối đa 5MB mỗi file');
+      return;
+    }
+    if (attachments.length >= 5) {
+      message.error('Tối đa 5 ảnh mỗi phản ánh');
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      const uploaded = await uploadService.uploadImage(file);
+      setAttachments(prev => [...prev, uploaded.fileUrl]);
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || 'Tải ảnh thất bại, vui lòng thử lại');
+    } finally {
+      setUploadingFile(false);
+      // Reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImageUrls(prev => prev.filter((_, i) => i !== index));
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!categoryId || !targetOrganizationId || !incidentVillageId) {
+      message.error('Vui lòng chọn đầy đủ lĩnh vực, tổ chức và thôn xảy ra sự việc');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const created = await feedbackService.createFeedback({
-        title,
-        description,
-        address,
-        category,
-        targetOrganization,
-        priority,
-        isAnonymous,
-        reporterName: isAnonymous ? 'Người dân ẩn danh' : reporterName,
-        reporterPhone: isAnonymous ? '' : reporterPhone,
-        imageUrls
+        title: title.trim(),
+        content: content.trim(),
+        address: address.trim() || undefined,
+        categoryId,
+        targetOrganizationId,
+        incidentVillageId,
+        attachments
       });
-      navigate(`/portal/feedbacks/${created.id}`);
+      setCreatedCode(created.code);
+      setSubmitted(true);
+    } catch (err: any) {
+      const respData = err?.response?.data;
+      let msg = '';
+      if (Array.isArray(respData?.message)) {
+        msg = respData.message.join(', ');
+      } else {
+        msg = respData?.message || err?.message || 'Gửi phản ánh thất bại';
+      }
+      message.error(msg);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="create-feedback-page">
+        <div className="form-container-card">
+          <div className="success-submit-state" style={{ textAlign: 'center', padding: '48px 24px' }}>
+            <CheckCircle2 size={64} style={{ color: 'var(--success)', marginBottom: 20 }} />
+            <h2 style={{ marginBottom: 8 }}>Gửi phản ánh thành công!</h2>
+            <p style={{ color: 'var(--ink-soft)', marginBottom: 8 }}>
+              Mã phản ánh của bạn: <strong style={{ color: 'var(--blue)', fontSize: '1.1em' }}>{createdCode}</strong>
+            </p>
+            <p style={{ color: 'var(--ink-soft)', marginBottom: 32 }}>
+              Cơ quan chức năng sẽ tiếp nhận và phản hồi sớm nhất. Bạn có thể theo dõi trạng thái trong mục <strong>Phản ánh của tôi</strong>.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/portal/feedbacks" className="cta-btn">
+                Xem danh sách phản ánh của tôi
+              </Link>
+              <button
+                type="button"
+                className="cta-ghost"
+                onClick={() => {
+                  setSubmitted(false);
+                  setTitle('');
+                  setContent('');
+                  setAddress('');
+                  setAttachments([]);
+                }}
+              >
+                Gửi phản ánh khác
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="create-feedback-page">
@@ -79,176 +173,186 @@ export const CreateFeedbackPage: React.FC = () => {
           <span className="eyebrow">Tiếp nhận ý kiến nhân dân</span>
           <h2>Gửi Phản Ánh &amp; Kiến Nghị Mới</h2>
           <p>
-            Vui lòng cung cấp đầy đủ thông tin chi tiết và hình ảnh thực tế để cơ quan chức năng phân loại và xử lý nhanh chóng.
+            Vui lòng cung cấp đầy đủ thông tin chi tiết và hình ảnh thực tế để cơ quan chức năng phân loại và tiếp nhận nhanh chóng.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="feedback-submit-form">
-          {/* Tiêu đề */}
-          <div className="form-group">
-            <label htmlFor="fb-title">Tiêu đề phản ánh *</label>
-            <input
-              id="fb-title"
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ví dụ: Đề nghị hỗ trợ sửa chữa mái nhà dột nát cho hộ nghèo..."
-            />
+        {dataLoading ? (
+          <div className="loading-state">
+            <div className="spinner" />
+            <p>Đang tải dữ liệu...</p>
           </div>
-
-          {/* Phân loại & Tổ chức phụ trách */}
-          <div className="form-row-grid">
+        ) : (
+          <form onSubmit={handleSubmit} className="feedback-submit-form">
+            {/* Tiêu đề */}
             <div className="form-group">
-              <label htmlFor="fb-cat">Lĩnh vực chuyên đề *</label>
-              <select
-                id="fb-cat"
-                value={category}
-                onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
-              >
-                <option value="welfare">An sinh xã hội & Vì người nghèo</option>
-                <option value="environment">Môi trường & Rác thải</option>
-                <option value="traffic">Giao thông - Đô thị</option>
-                <option value="supervision">Giám sát đầu tư cộng đồng</option>
-                <option value="women_field">Công tác Phụ nữ & Trẻ em</option>
-                <option value="youth_field">Thanh niên & Khởi nghiệp</option>
-                <option value="veterans_field">Công tác Cựu chiến binh</option>
-                <option value="farmer_field">Nông nghiệp & Nông dân</option>
-                <option value="security">An ninh trật tự cơ sở</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="fb-org">Tổ chức phụ trách tiếp nhận</label>
-              <select
-                id="fb-org"
-                value={targetOrganization}
-                onChange={(e) => setTargetOrganization(e.target.value as OrganizationType)}
-              >
-                <option value="mttq">Ủy ban MTTQ Xã</option>
-                <option value="youth">Đoàn TNCS Hồ Chí Minh</option>
-                <option value="women">Hội Liên hiệp Phụ nữ</option>
-                <option value="veterans">Hội Cựu chiến binh</option>
-                <option value="farmers">Hội Nông dân</option>
-                <option value="union">Công đoàn cơ sở</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Mức độ ưu tiên & Địa chỉ */}
-          <div className="form-row-grid">
-            <div className="form-group">
-              <label htmlFor="fb-prio">Mức độ ưu tiên</label>
-              <select
-                id="fb-prio"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as FeedbackPriority)}
-              >
-                <option value="normal">Bình thường (xử lý theo quy định)</option>
-                <option value="urgent">Khẩn cấp (nguy cơ sập, cháy nổ, ô nhiễm nặng)</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="fb-address">Địa điểm / Vị trí xảy ra sự việc *</label>
+              <label htmlFor="fb-title">
+                Tiêu đề phản ánh <span className="req">*</span>
+              </label>
               <input
-                id="fb-address"
+                id="fb-title"
                 type="text"
                 required
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Số nhà, thôn xóm, xã phường..."
+                minLength={5}
+                maxLength={255}
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="Ví dụ: Đề nghị hỗ trợ sửa chữa mái nhà dột nát cho hộ nghèo..."
               />
             </div>
-          </div>
 
-          {/* Nội dung chi tiết */}
-          <div className="form-group">
-            <label htmlFor="fb-desc">Nội dung phản ánh chi tiết *</label>
-            <textarea
-              id="fb-desc"
-              rows={4}
-              required
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Mô tả cụ thể diễn biến, thời gian, hiện trạng và mong muốn kiến nghị gửi tới chính quyền và đoàn thể..."
-            />
-          </div>
+            {/* Lĩnh vực & Tổ chức */}
+            <div className="form-row-grid">
+              <div className="form-group">
+                <label htmlFor="fb-cat">
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Tag size={13} />
+                    <span>Lĩnh vực phản ánh <span className="req">*</span></span>
+                  </span>
+                </label>
+                <select
+                  id="fb-cat"
+                  required
+                  value={categoryId}
+                  onChange={e => setCategoryId(e.target.value)}
+                >
+                  <option value="">-- Chọn lĩnh vực --</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Ảnh đính kèm */}
-          <div className="form-group">
-            <label>Hình ảnh đính kèm minh chứng</label>
-            <div className="image-uploader-box">
-              <div className="image-url-input-row">
+              <div className="form-group">
+                <label htmlFor="fb-org">
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Users size={13} />
+                    <span>Tổ chức tiếp nhận <span className="req">*</span></span>
+                  </span>
+                </label>
+                <select
+                  id="fb-org"
+                  required
+                  value={targetOrganizationId}
+                  onChange={e => setTargetOrganizationId(e.target.value)}
+                >
+                  <option value="">-- Chọn tổ chức --</option>
+                  {organizations.map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Thôn xảy ra & Địa chỉ */}
+            <div className="form-row-grid">
+              <div className="form-group">
+                <label htmlFor="fb-village">
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <MapPin size={13} />
+                    <span>Thôn / Tổ dân phố xảy ra sự việc <span className="req">*</span></span>
+                  </span>
+                </label>
+                <select
+                  id="fb-village"
+                  required
+                  value={incidentVillageId}
+                  onChange={e => setIncidentVillageId(e.target.value)}
+                >
+                  <option value="">-- Chọn thôn --</option>
+                  {villages.map(v => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="fb-address">
+                  Địa chỉ cụ thể (tùy chọn)
+                </label>
                 <input
-                  type="url"
-                  placeholder="Dán link ảnh hoặc tải ảnh lên..."
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  id="fb-address"
+                  type="text"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  placeholder="Số nhà, đường, thôn xóm..."
+                  maxLength={500}
                 />
-                <button type="button" className="cta-ghost" onClick={handleAddImage}>
-                  Thêm ảnh
-                </button>
-              </div>
-
-              <div className="uploaded-thumbnails">
-                {imageUrls.map((url, idx) => (
-                  <div key={idx} className="thumb-item">
-                    <img src={url} alt={`Ảnh ${idx + 1}`} />
-                    <button type="button" className="remove-thumb" onClick={() => handleRemoveImage(idx)}>✕</button>
-                  </div>
-                ))}
               </div>
             </div>
-          </div>
 
-          {/* Thông tin người gửi */}
-          <div className="sender-info-box">
-            <div className="anon-checkbox">
-              <input
-                id="is-anon"
-                type="checkbox"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
+            {/* Nội dung chi tiết */}
+            <div className="form-group">
+              <label htmlFor="fb-content">
+                Nội dung phản ánh chi tiết <span className="req">*</span>
+              </label>
+              <textarea
+                id="fb-content"
+                rows={5}
+                required
+                minLength={10}
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                placeholder="Mô tả cụ thể diễn biến, thời gian, hiện trạng và mong muốn kiến nghị gửi tới chính quyền và đoàn thể..."
               />
-              <label htmlFor="is-anon">Gửi ẩn danh (Thông tin cá nhân của bạn sẽ không hiển thị công khai)</label>
             </div>
 
-            {!isAnonymous && (
-              <div className="form-row-grid" style={{ marginTop: 12 }}>
-                <div className="form-group">
-                  <label htmlFor="rep-name">Họ tên người gửi</label>
-                  <input
-                    id="rep-name"
-                    type="text"
-                    value={reporterName}
-                    onChange={(e) => setReporterName(e.target.value)}
-                    placeholder="Họ và tên"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="rep-phone">Số điện thoại liên hệ</label>
-                  <input
-                    id="rep-phone"
-                    type="tel"
-                    value={reporterPhone}
-                    onChange={(e) => setReporterPhone(e.target.value)}
-                    placeholder="Số điện thoại"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+            {/* Upload ảnh */}
+            <div className="form-group">
+              <label>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <ImageIcon size={13} />
+                  <span>Hình ảnh đính kèm minh chứng (tối đa 5 ảnh, mỗi ảnh ≤5MB)</span>
+                </span>
+              </label>
+              <div className="image-uploader-box">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleFileSelect}
+                />
+                <button
+                  type="button"
+                  className="cta-ghost"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingFile || attachments.length >= 5}
+                >
+                  {uploadingFile ? (
+                    <><Loader2 size={14} className="spin" /> Đang tải ảnh...</>
+                  ) : (
+                    <><Upload size={14} /> Chọn ảnh để tải lên</>
+                  )}
+                </button>
 
-          <div className="form-action-buttons">
-            <Link to="/portal/feedbacks" className="cta-ghost">
-              Hủy bỏ
-            </Link>
-            <button type="submit" className="cta-btn" disabled={loading}>
-              {loading ? 'Đang gửi phản ánh...' : 'Gửi phản ánh tới Mặt trận Tổ quốc'}
-            </button>
-          </div>
-        </form>
+                {attachments.length > 0 && (
+                  <div className="uploaded-thumbnails" style={{ marginTop: 12 }}>
+                    {attachments.map((url, idx) => (
+                      <div key={idx} className="thumb-item">
+                        <img src={url} alt={`Ảnh ${idx + 1}`} />
+                        <button
+                          type="button"
+                          className="remove-thumb"
+                          onClick={() => handleRemoveAttachment(idx)}
+                        >✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="form-action-buttons">
+              <Link to="/portal/feedbacks" className="cta-ghost">
+                Hủy bỏ
+              </Link>
+              <button type="submit" className="cta-btn" disabled={submitting}>
+                {submitting ? 'Đang gửi phản ánh...' : 'Gửi phản ánh'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
