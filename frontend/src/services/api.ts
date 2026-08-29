@@ -159,9 +159,9 @@ function handleLogoutAndRedirect() {
   localStorage.removeItem('sct_token');
   localStorage.removeItem('sct_refresh_token');
 
-  // Chỉ redirect nếu người dùng đang ở trong khu vực portal
-  if (window.location.pathname.startsWith('/portal')) {
-    window.location.href = '/login?session_expired=true';
+  // Chỉ redirect nếu người dùng đang ở trong khu vực cổng hệ thống
+  if (window.location.pathname.startsWith('/he-thong') || window.location.pathname.startsWith('/portal')) {
+    window.location.href = '/dang-nhap?session_expired=true';
   }
 }
 

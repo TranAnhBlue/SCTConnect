@@ -97,7 +97,7 @@ export const FeedbackDetailPage: React.FC = () => {
       <div className="empty-state">
         <AlertCircle size={48} className="text-muted" />
         <h3>Không tìm thấy phản ánh yêu cầu</h3>
-        <Link to="/portal/feedbacks" className="cta-btn">
+        <Link to="/he-thong/phan-anh" className="cta-btn">
           Quay lại danh sách
         </Link>
       </div>
@@ -110,7 +110,7 @@ export const FeedbackDetailPage: React.FC = () => {
     <div className="feedback-detail-page">
       {/* Breadcrumb & Status */}
       <div className="detail-top-nav">
-        <Link to="/portal/feedbacks" className="back-link">
+        <Link to="/he-thong/phan-anh" className="back-link">
           <ArrowLeft size={16} />
           <span>{isCitizen ? 'Phản ánh của tôi' : 'Danh sách phản ánh'}</span>
         </Link>

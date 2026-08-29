@@ -101,7 +101,7 @@ export const FeedbacksListPage: React.FC = () => {
               : 'Tiếp nhận, phân loại và xử lý ý kiến nhân dân'}
           </p>
         </div>
-        <Link to="/portal/feedbacks/create" className="cta-btn">
+        <Link to="/he-thong/phan-anh/gui-moi" className="cta-btn">
           <PlusCircle size={16} />
           <span>Gửi phản ánh mới</span>
         </Link>
@@ -150,7 +150,7 @@ export const FeedbacksListPage: React.FC = () => {
           <h3>Không tìm thấy phản ánh nào</h3>
           <p>{isCitizen ? 'Bạn chưa gửi phản ánh nào.' : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'}</p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 12 }}>
-            <Link to="/portal/feedbacks/create" className="cta-btn">
+            <Link to="/he-thong/phan-anh/gui-moi" className="cta-btn">
               <PlusCircle size={14} /> Gửi phản ánh đầu tiên
             </Link>
             {statusFilter !== 'all' && (
@@ -171,7 +171,7 @@ export const FeedbacksListPage: React.FC = () => {
                 </div>
 
                 <h3 className="fb-card-title">
-                  <Link to={`/portal/feedbacks/${fb.id}`}>{fb.title}</Link>
+                  <Link to={`/he-thong/phan-anh/${fb.id}`}>{fb.title}</Link>
                 </h3>
 
                 <p className="fb-card-desc">
@@ -207,7 +207,7 @@ export const FeedbacksListPage: React.FC = () => {
                     )}
                     <span><Calendar size={12} /> {new Date(fb.createdAt).toLocaleDateString('vi-VN')}</span>
                   </div>
-                  <Link to={`/portal/feedbacks/${fb.id}`} className="view-btn">
+                  <Link to={`/he-thong/phan-anh/${fb.id}`} className="view-btn">
                     <span>Chi tiết</span>
                     <Eye size={14} />
                   </Link>

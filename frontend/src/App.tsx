@@ -20,7 +20,7 @@ const OfficerOrAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = user?.userType === 'admin';
   const isOfficer = user?.userType === 'officer';
   if (!isAdmin && !isOfficer) {
-    return <Navigate to="/portal/dashboard" replace />;
+    return <Navigate to="/he-thong/tong-quan" replace />;
   }
   return <>{children}</>;
 };
@@ -29,7 +29,7 @@ const AdminOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { user } = useAuth();
   const isAdmin = user?.userType === 'admin';
   if (!isAdmin) {
-    return <Navigate to="/portal/dashboard" replace />;
+    return <Navigate to="/he-thong/tong-quan" replace />;
   }
   return <>{children}</>;
 };
@@ -39,37 +39,38 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public */}
+          {/* Public URLs bằng Tiếng Việt */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/dang-nhap" element={<LoginPage />} />
+          <Route path="/dang-ky" element={<RegisterPage />} />
 
-          {/* Portal */}
-          <Route path="/portal" element={<PortalLayout />}>
-            <Route index element={<Navigate to="/portal/dashboard" replace />} />
+          {/* Hỗ trợ URL cũ để không bị gãy link */}
+          <Route path="/login" element={<Navigate to="/dang-nhap" replace />} />
+          <Route path="/register" element={<Navigate to="/dang-ky" replace />} />
+          <Route path="/portal/*" element={<Navigate to="/he-thong/tong-quan" replace />} />
+
+          {/* Cổng hệ thống /he-thong */}
+          <Route path="/he-thong" element={<PortalLayout />}>
+            <Route index element={<Navigate to="/he-thong/tong-quan" replace />} />
 
             {/* Dùng chung cho tất cả các role đã đăng nhập */}
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="feedbacks" element={<FeedbacksListPage />} />
-            <Route path="feedbacks/create" element={<CreateFeedbackPage />} />
-            <Route path="feedbacks/:id" element={<FeedbackDetailPage />} />
-            <Route path="profile" element={<ProfilePage />} />
+            <Route path="tong-quan" element={<DashboardPage />} />
+            <Route path="phan-anh" element={<FeedbacksListPage />} />
+            <Route path="phan-anh/gui-moi" element={<CreateFeedbackPage />} />
+            <Route path="phan-anh/:id" element={<FeedbackDetailPage />} />
+            <Route path="ho-so" element={<ProfilePage />} />
 
-            {/* Dành cho Cán bộ cơ sở & Quản trị viên: Quản trị Tổ chức & Địa bàn cấp xã */}
+            {/* Dành cho Cán bộ cơ sở & Quản trị viên: Tổ chức & Địa bàn, Báo cáo */}
             <Route
-              path="administrative"
+              path="to-chuc-dia-ban"
               element={
                 <OfficerOrAdminRoute>
                   <AdministrativePage />
                 </OfficerOrAdminRoute>
               }
             />
-            {/* Tương thích ngược: Nếu ai bấm /organizations thì chuyển về /administrative */}
-            <Route path="organizations" element={<Navigate to="/portal/administrative" replace />} />
-            <Route path="catalog" element={<Navigate to="/portal/administrative" replace />} />
-
             <Route
-              path="reports"
+              path="bao-cao-thong-ke"
               element={
                 <OfficerOrAdminRoute>
                   <ReportsPage />
@@ -77,15 +78,26 @@ export function App() {
               }
             />
 
-            {/* Dành độc quyền cho Quản trị viên (Admin): Quản lý tài khoản toàn xã */}
+            {/* Dành độc quyền cho Quản trị viên (Admin): Quản lý người dùng */}
             <Route
-              path="users"
+              path="nguoi-dung"
               element={
                 <AdminOnlyRoute>
                   <UsersManagementPage />
                 </AdminOnlyRoute>
               }
             />
+
+            {/* Chuyển hướng các alias cũ */}
+            <Route path="dashboard" element={<Navigate to="/he-thong/tong-quan" replace />} />
+            <Route path="feedbacks" element={<Navigate to="/he-thong/phan-anh" replace />} />
+            <Route path="feedbacks/create" element={<Navigate to="/he-thong/phan-anh/gui-moi" replace />} />
+            <Route path="administrative" element={<Navigate to="/he-thong/to-chuc-dia-ban" replace />} />
+            <Route path="organizations" element={<Navigate to="/he-thong/to-chuc-dia-ban" replace />} />
+            <Route path="catalog" element={<Navigate to="/he-thong/to-chuc-dia-ban" replace />} />
+            <Route path="reports" element={<Navigate to="/he-thong/bao-cao-thong-ke" replace />} />
+            <Route path="users" element={<Navigate to="/he-thong/nguoi-dung" replace />} />
+            <Route path="profile" element={<Navigate to="/he-thong/ho-so" replace />} />
           </Route>
 
           {/* Fallback */}

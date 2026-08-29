@@ -40,29 +40,26 @@ export const PortalLayout: React.FC = () => {
     });
   };
 
-  // Cấu hình menu tối ưu:
-  // - Công dân: Bảng tổng quan, Phản ánh của tôi, Gửi phản ánh mới
-  // - Cán bộ: Bảng tổng quan, Quản lý Phản ánh, Tổ chức & Địa bàn, Báo cáo & Thống kê
-  // - Admin: Đầy đủ + Quản lý Người dùng (độc quyền Admin)
+  // Cấu hình menu với URL tiếng Việt thân thiện:
   const navItems = [
-    { label: 'Bảng tổng quan', path: '/portal/dashboard', icon: LayoutDashboard },
+    { label: 'Bảng tổng quan', path: '/he-thong/tong-quan', icon: LayoutDashboard },
     {
       label: isCitizen ? 'Phản ánh của tôi' : 'Quản lý Phản ánh',
-      path: '/portal/feedbacks',
+      path: '/he-thong/phan-anh',
       icon: FileText
     },
-    { label: 'Gửi phản ánh mới', path: '/portal/feedbacks/create', icon: PlusCircle },
+    { label: 'Gửi phản ánh mới', path: '/he-thong/phan-anh/gui-moi', icon: PlusCircle },
 
-    // Dành cho Cán bộ & Admin: Quản lý / Tra cứu Đơn vị Hội đoàn & Thôn bản
+    // Cán bộ & Admin
     ...(isAdmin || isOfficer
       ? [
-          { label: 'Tổ chức & Địa bàn', path: '/portal/administrative', icon: Layers },
-          { label: 'Báo cáo & Thống kê', path: '/portal/reports', icon: BarChart3 }
+          { label: 'Tổ chức & Địa bàn', path: '/he-thong/to-chuc-dia-ban', icon: Layers },
+          { label: 'Báo cáo & Thống kê', path: '/he-thong/bao-cao-thong-ke', icon: BarChart3 }
         ]
       : []),
 
-    // Độc quyền cho Admin: Quản lý người dùng toàn xã
-    ...(isAdmin ? [{ label: 'Quản lý Người dùng', path: '/portal/users', icon: Users }] : [])
+    // Độc quyền cho Admin
+    ...(isAdmin ? [{ label: 'Quản lý Người dùng', path: '/he-thong/nguoi-dung', icon: Users }] : [])
   ];
 
   return (
@@ -103,10 +100,11 @@ export const PortalLayout: React.FC = () => {
             const Icon = item.icon;
             const isExact = location.pathname === item.path;
             const isNestedDetail =
-              item.path === '/portal/feedbacks' &&
-              location.pathname.startsWith('/portal/feedbacks/') &&
-              location.pathname !== '/portal/feedbacks/create';
+              item.path === '/he-thong/phan-anh' &&
+              location.pathname.startsWith('/he-thong/phan-anh/') &&
+              location.pathname !== '/he-thong/phan-anh/gui-moi';
             const isActive = isExact || isNestedDetail;
+
             return (
               <Link
                 key={item.path}
@@ -125,8 +123,8 @@ export const PortalLayout: React.FC = () => {
         {/* Footer */}
         <div className="sidebar-footer">
           <Link
-            to="/portal/profile"
-            className={`nav-item ${location.pathname === '/portal/profile' ? 'active' : ''}`}
+            to="/he-thong/ho-so"
+            className={`nav-item ${location.pathname === '/he-thong/ho-so' ? 'active' : ''}`}
             title={isCollapsed ? 'Hồ sơ cá nhân' : undefined}
             onClick={() => setSidebarOpen(false)}
           >
@@ -138,7 +136,7 @@ export const PortalLayout: React.FC = () => {
             className="nav-item logout-btn"
             onClick={() => {
               logout();
-              navigate('/login');
+              navigate('/dang-nhap');
             }}
             title={isCollapsed ? 'Đăng xuất' : undefined}
           >
@@ -202,7 +200,7 @@ export const PortalLayout: React.FC = () => {
                     </div>
                   </div>
                   <Link
-                    to="/portal/profile"
+                    to="/he-thong/ho-so"
                     className="dropdown-item-link"
                     onClick={() => setUserMenuOpen(false)}
                   >
@@ -215,7 +213,7 @@ export const PortalLayout: React.FC = () => {
                     onClick={() => {
                       setUserMenuOpen(false);
                       logout();
-                      navigate('/login');
+                      navigate('/dang-nhap');
                     }}
                   >
                     <LogOut size={16} />

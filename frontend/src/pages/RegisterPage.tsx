@@ -68,7 +68,7 @@ export const RegisterPage: React.FC = () => {
         key: loadingKey,
         duration: 3
       });
-      navigate('/portal/dashboard');
+      navigate('/he-thong/tong-quan');
     } catch (err: any) {
       const respData = err?.response?.data;
       let msg = '';
@@ -197,7 +197,7 @@ export const RegisterPage: React.FC = () => {
         </form>
 
         <div className="auth-footer">
-          <p>Đã có tài khoản? <Link to="/login">Đăng nhập ngay</Link></p>
+          <p>Đã có tài khoản? <Link to="/dang-nhap">Đăng nhập ngay</Link></p>
           <p><Link to="/">← Quay lại trang giới thiệu</Link></p>
         </div>
       </div>

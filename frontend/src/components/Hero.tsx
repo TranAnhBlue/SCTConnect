@@ -37,7 +37,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenContact }) => {
 
           <div className="hero-ctas">
             <Link
-              to="/register"
+              to="/dang-ky"
               className="cta-btn"
             >
               Đăng ký dùng thử miễn phí

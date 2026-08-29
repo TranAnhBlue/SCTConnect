@@ -35,12 +35,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenContact }) => {
         </nav>
 
         <div className="nav-actions-wrap" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Link to="/register" className="cta-btn" style={{ padding: '9px 18px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Link to="/dang-ky" className="cta-btn" style={{ padding: '9px 18px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <UserPlus size={15} />
             <span>Đăng ký</span>
           </Link>
 
-          <Link to="/login" className="cta-ghost" style={{ padding: '9px 16px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Link to="/dang-nhap" className="cta-ghost" style={{ padding: '9px 16px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <LogIn size={15} />
             <span>Đăng nhập</span>
           </Link>
@@ -59,10 +59,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenContact }) => {
 
         {mobileMenuOpen && (
           <div className="mobile-drawer">
-            <Link to="/register" onClick={closeMobileMenu} style={{ fontWeight: 700, color: 'var(--blue)' }}>
+            <Link to="/dang-ky" onClick={closeMobileMenu} style={{ fontWeight: 700, color: 'var(--blue)' }}>
               Đăng ký tài khoản
             </Link>
-            <Link to="/login" onClick={closeMobileMenu}>
+            <Link to="/dang-nhap" onClick={closeMobileMenu}>
               Đăng nhập hệ thống
             </Link>
             <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '4px 0' }} />

@@ -136,7 +136,7 @@ export const DashboardPage: React.FC = () => {
       {/* Citizen Quick Actions — CHỈ 2 nút, KHÔNG có Cơ cấu tổ chức */}
       {isCitizen && (
         <div className="citizen-quick-actions">
-          <Link to="/portal/feedbacks/create" className="citizen-action-card citizen-action-primary">
+          <Link to="/he-thong/phan-anh/gui-moi" className="citizen-action-card citizen-action-primary">
             <div className="citizen-action-icon">
               <Send size={28} />
             </div>
@@ -146,7 +146,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <ArrowRight size={18} className="citizen-action-arrow" />
           </Link>
-          <Link to="/portal/feedbacks" className="citizen-action-card">
+          <Link to="/he-thong/phan-anh" className="citizen-action-card">
             <div className="citizen-action-icon">
               <FileText size={28} />
             </div>
@@ -166,7 +166,7 @@ export const DashboardPage: React.FC = () => {
             <FileText size={18} style={{ color: 'var(--blue)' }} />
             <span>{isCitizen ? 'Phản ánh gần đây của tôi' : 'Phản ánh mới nhận'}</span>
           </h3>
-          <Link to="/portal/feedbacks" className="view-all-link">
+          <Link to="/he-thong/phan-anh" className="view-all-link">
             <span>Xem tất cả</span>
             <ArrowRight size={14} />
           </Link>
@@ -185,7 +185,7 @@ export const DashboardPage: React.FC = () => {
                 {isCitizen ? 'Bạn chưa gửi phản ánh nào.' : 'Chưa có phản ánh kiến nghị nào.'}
               </p>
               <Link
-                to="/portal/feedbacks/create"
+                to="/he-thong/phan-anh/gui-moi"
                 className="cta-btn"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
@@ -196,7 +196,7 @@ export const DashboardPage: React.FC = () => {
           ) : (
             <div className="recent-feedbacks-list">
               {recentFeedbacks.map(fb => (
-                <Link to={`/portal/feedbacks/${fb.id}`} key={fb.id} className="recent-fb-item">
+                <Link to={`/he-thong/phan-anh/${fb.id}`} key={fb.id} className="recent-fb-item">
                   <div className="recent-fb-main">
                     <div className="recent-fb-code">{fb.code}</div>
                     <h4 className="recent-fb-title">{fb.title}</h4>
@@ -224,7 +224,7 @@ export const DashboardPage: React.FC = () => {
             <h3 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <BarChart3 size={16} /> Phân bổ theo tổ chức
             </h3>
-            <Link to="/portal/reports" className="view-all-link">
+            <Link to="/he-thong/bao-cao-thong-ke" className="view-all-link">
               <span>Xem báo cáo đầy đủ</span>
               <ArrowRight size={14} />
             </Link>

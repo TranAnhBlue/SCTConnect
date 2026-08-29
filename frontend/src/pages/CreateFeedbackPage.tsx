@@ -136,7 +136,7 @@ export const CreateFeedbackPage: React.FC = () => {
               Cơ quan chức năng sẽ tiếp nhận và phản hồi sớm nhất. Bạn có thể theo dõi trạng thái trong mục <strong>Phản ánh của tôi</strong>.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/portal/feedbacks" className="cta-btn">
+              <Link to="/he-thong/phan-anh" className="cta-btn">
                 Xem danh sách phản ánh của tôi
               </Link>
               <button
@@ -162,7 +162,7 @@ export const CreateFeedbackPage: React.FC = () => {
   return (
     <div className="create-feedback-page">
       <div className="page-nav-back">
-        <Link to="/portal/feedbacks" className="back-link">
+        <Link to="/he-thong/phan-anh" className="back-link">
           <ArrowLeft size={16} />
           <span>Quay lại danh sách phản ánh</span>
         </Link>
@@ -344,7 +344,7 @@ export const CreateFeedbackPage: React.FC = () => {
             </div>
 
             <div className="form-action-buttons">
-              <Link to="/portal/feedbacks" className="cta-ghost">
+              <Link to="/he-thong/phan-anh" className="cta-ghost">
                 Hủy bỏ
               </Link>
               <button type="submit" className="cta-btn" disabled={submitting}>

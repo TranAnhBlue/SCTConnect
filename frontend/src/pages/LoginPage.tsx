@@ -59,7 +59,7 @@ export const LoginPage: React.FC = () => {
     try {
       await login(cleanPhone, cleanPassword);
       message.success({ content: 'Đăng nhập thành công! Đang chuyển hướng...', key: loadingKey, duration: 2 });
-      navigate('/portal/dashboard');
+      navigate('/he-thong/tong-quan');
     } catch (err: any) {
       const respData = err?.response?.data;
       let msg = '';
@@ -163,7 +163,7 @@ export const LoginPage: React.FC = () => {
         </form>
 
         <div className="auth-footer">
-          <p>Chưa có tài khoản? <Link to="/register">Đăng ký tài khoản công dân</Link></p>
+          <p>Chưa có tài khoản? <Link to="/dang-ky">Đăng ký tài khoản công dân</Link></p>
           <p><Link to="/">← Quay lại trang giới thiệu</Link></p>
         </div>
       </div>
