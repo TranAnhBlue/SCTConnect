@@ -14,8 +14,6 @@ import {
 import {
   OrganizationResponse,
   OrganizationListResponse,
-  OrganizationTreeResponse,
-  OrganizationTreeNode,
 } from '../schemas';
 
 @Injectable()
@@ -143,25 +141,5 @@ export class OrganizationsService {
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,
     };
-  }
-
-  async findTree(): Promise<OrganizationTreeResponse> {
-    const orgs = await this.organizationsRepository.find({
-      where: { isActive: true },
-      order: { createdAt: 'ASC' },
-    });
-
-    const roots: OrganizationTreeNode[] = orgs.map((org) => ({
-      id: org.id,
-      code: org.code,
-      name: org.name,
-      type: org.type,
-      isActive: org.isActive,
-      createdAt: org.createdAt,
-      updatedAt: org.updatedAt,
-      children: [],
-    }));
-
-    return roots;
   }
 }

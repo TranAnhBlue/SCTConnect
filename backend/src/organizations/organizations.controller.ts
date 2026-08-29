@@ -23,15 +23,12 @@ import {
   UpdateOrganizationRequestDTO,
   OrganizationResponseDTO,
   OrganizationListResponseDTO,
-  OrganizationTreeResponseDTO,
 } from './dto';
 import {
   OrganizationResponse,
   OrganizationListResponse,
-  OrganizationTreeResponse,
   OrganizationResponseSchema,
   OrganizationListResponseSchema,
-  OrganizationTreeResponseSchema,
 } from './schemas';
 import { UserType } from '../users/entities/user.entity';
 import { ApiSuccessResponse, Public, Roles } from '../common/decorators';
@@ -46,7 +43,7 @@ export class OrganizationsController {
   @Public()
   @Get()
   @ApiOperation({
-    summary: 'Lấy danh sách phẳng các tổ chức, hội đoàn thể toàn xã',
+    summary: 'Lấy danh sách phẳng các tổ chức, hội đoàn thể toàn xã (Công khai)',
   })
   @ApiSuccessResponse(
     OrganizationListResponseDTO,
@@ -57,20 +54,6 @@ export class OrganizationsController {
     @Query() query: QueryOrganizationsRequestDTO,
   ): Promise<OrganizationListResponse> {
     return this.organizationsService.findAll(query);
-  }
-
-  @Public()
-  @Get('tree')
-  @ApiOperation({
-    summary: 'Lấy sơ đồ cây cơ cấu phân cấp tổ chức toàn xã (Cây đa tầng)',
-  })
-  @ApiSuccessResponse(
-    OrganizationTreeResponseDTO,
-    OrganizationTreeResponseSchema,
-    'Lấy sơ đồ cây tổ chức thành công',
-  )
-  async findTree(): Promise<OrganizationTreeResponse> {
-    return this.organizationsService.findTree();
   }
 
   @Post()

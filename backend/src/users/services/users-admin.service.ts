@@ -5,8 +5,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
-import { QueryUsersRequestDTO, UpdateUserStatusRequestDTO } from '../dto';
+import { User, UserType } from '../entities/user.entity';
+import { Organization } from '../../organizations/entities/organization.entity';
+import {
+  QueryUsersRequestDTO,
+  UpdateUserStatusRequestDTO,
+  UpdateUserRoleRequestDTO,
+} from '../dto';
 import { UserResponse, PaginatedUsersResponse } from '../schemas';
 import { UserResponseMapper } from '../mappers';
 
@@ -15,6 +20,8 @@ export class UsersAdminService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Organization)
+    private readonly organizationsRepository: Repository<Organization>,
   ) {}
 
   async updateStatus(
@@ -43,6 +50,55 @@ export class UsersAdminService {
     const savedUser = await this.usersRepository.save(user);
 
     return UserResponseMapper.toResponse(savedUser);
+  }
+
+  async updateRole(
+    targetUserId: string,
+    dto: UpdateUserRoleRequestDTO,
+    currentUserId: string,
+  ): Promise<UserResponse> {
+    if (targetUserId === currentUserId && dto.userType !== UserType.ADMIN) {
+      throw new BadRequestException(
+        'Bạn không thể tự hạ quyền quản trị viên của chính mình',
+      );
+    }
+
+    const user = await this.usersRepository.findOne({
+      where: { id: targetUserId },
+      relations: { organization: true, village: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException(
+        'Không tìm thấy người dùng này trong hệ thống',
+      );
+    }
+
+    if (dto.organizationId) {
+      const org = await this.organizationsRepository.findOne({
+        where: { id: dto.organizationId, isActive: true },
+      });
+
+      if (!org) {
+        throw new BadRequestException(
+          'Tổ chức / Hội đoàn thể không tồn tại hoặc đã ngừng hoạt động',
+        );
+      }
+
+      user.organizationId = dto.organizationId;
+    } else {
+      user.organizationId = null;
+    }
+
+    user.userType = dto.userType;
+    const savedUser = await this.usersRepository.save(user);
+
+    const reloadedUser = await this.usersRepository.findOne({
+      where: { id: savedUser.id },
+      relations: { organization: true, village: true },
+    });
+
+    return UserResponseMapper.toResponse(reloadedUser!);
   }
 
   async findAll(

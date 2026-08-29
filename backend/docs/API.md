@@ -35,7 +35,7 @@
 
 ---
 
-## 2️⃣ PHÂN HỆ QUẢN TRỊ TÀI KHOẢN TOÀN XÃ (`/api/v1/users` — 3 APIs)
+## 2️⃣ PHÂN HỆ QUẢN TRỊ TÀI KHOẢN TOÀN XÃ (`/api/v1/users` — 4 APIs)
 
 * `GET /api/v1/users` — **Lấy danh sách người dùng toàn xã**
   * *Quyền hạn:* `Bearer (Chỉ Admin Kỹ thuật)`
@@ -47,6 +47,10 @@
 * `PATCH /api/v1/users/:id/status` — **Khóa hoặc mở khóa tài khoản**
   * *Quyền hạn:* `Bearer (Chỉ Admin Kỹ thuật)`
   * *Params:* `:id` (UUID), *Body:* `{ "isActive": boolean }`
+
+* `PATCH /api/v1/users/:id/role` — **Gán vai trò Cán bộ / Phân quyền & chỉ định Hội tiếp nhận**
+  * *Quyền hạn:* `Bearer (Chỉ Admin Kỹ thuật)`
+  * *Params:* `:id` (UUID), *Body:* `{ "userType": "officer", "organizationId": "uuid-cua-hoi" }`
 
 ---
 
@@ -66,14 +70,11 @@
 
 ---
 
-## 4️⃣ PHÂN HỆ DANH MỤC HỘI ĐOÀN THỂ TIẾP NHẬN (`/api/v1/organizations` — 4 APIs)
+## 4️⃣ PHÂN HỆ DANH MỤC HỘI ĐOÀN THỂ TIẾP NHẬN (`/api/v1/organizations` — 3 APIs)
 
 * `GET /api/v1/organizations` — **Lấy danh mục các Hội đoàn thể tiếp nhận**
   * *Quyền hạn:* `Public`
-  * *Query:* `?type=&isActive=true`
-
-* `GET /api/v1/organizations/tree` — **Lấy sơ đồ cây phân cấp tổ chức toàn xã**
-  * *Quyền hạn:* `Public`
+  * *Query:* `?search=&type=&isActive=true`
 
 * `POST /api/v1/organizations` — **Tạo mới một Hội / Tổ chức tiếp nhận**
   * *Quyền hạn:* `Bearer (Chỉ Admin)`
@@ -174,11 +175,11 @@
 | 7 | `GET` | `/api/v1/users` | `Admin` | Quản lý danh sách người dùng toàn xã |
 | 8 | `GET` | `/api/v1/users/:id` | `Admin` | Xem chi tiết hồ sơ một người dùng |
 | 9 | `PATCH`| `/api/v1/users/:id/status` | `Admin` | Khóa / Mở khóa tài khoản người dùng |
-| 10 | `GET` | `/api/v1/villages` | `Public` | Danh mục Thôn / Tổ dân phố |
-| 11 | `POST` | `/api/v1/villages` | `Admin` | Thêm Thôn / Tổ dân phố mới |
-| 12 | `PATCH`| `/api/v1/villages/:id` | `Admin` | Cập nhật tên / Bật tắt Thôn / TDP |
-| 13 | `GET` | `/api/v1/organizations` | `Public` | Danh mục Hội đoàn thể tiếp nhận |
-| 14 | `GET` | `/api/v1/organizations/tree` | `Public` | Sơ đồ cây tổ chức toàn xã |
+| 10 | `PATCH`| `/api/v1/users/:id/role` | `Admin` | Gán vai trò Cán bộ & chỉ định Hội tiếp nhận |
+| 11 | `GET` | `/api/v1/villages` | `Public` | Danh mục Thôn / Tổ dân phố |
+| 12 | `POST` | `/api/v1/villages` | `Admin` | Thêm Thôn / Tổ dân phố mới |
+| 13 | `PATCH`| `/api/v1/villages/:id` | `Admin` | Cập nhật tên / Bật tắt Thôn / TDP |
+| 14 | `GET` | `/api/v1/organizations` | `Public` | Danh mục Hội đoàn thể tiếp nhận phẳng |
 | 15 | `POST` | `/api/v1/organizations` | `Admin` | Thêm Hội / Đơn vị tiếp nhận mới |
 | 16 | `PATCH`| `/api/v1/organizations/:id` | `Admin` | Cập nhật thông tin / Bật tắt Hội tiếp nhận |
 | 17 | `GET` | `/api/v1/categories` | `Public` | Lấy danh mục lĩnh vực phản ánh |

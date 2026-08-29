@@ -7,12 +7,18 @@ import {
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { UsersAdminService } from './services/users-admin.service';
 import { UserType } from './entities/user.entity';
 import {
   QueryUsersRequestDTO,
   UpdateUserStatusRequestDTO,
+  UpdateUserRoleRequestDTO,
   UserResponseDTO,
   PaginatedUsersResponseDTO,
 } from './dto';
@@ -51,6 +57,7 @@ export class UsersController {
   @ApiOperation({
     summary: 'Xem chi tiết hồ sơ người dùng theo ID (Chỉ dành riêng cho Admin)',
   })
+  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiSuccessResponse(
     UserResponseDTO,
     UserResponseSchema,
@@ -67,6 +74,7 @@ export class UsersController {
     summary:
       'Khóa hoặc mở khóa tài khoản người dùng (Chỉ dành riêng cho Admin)',
   })
+  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
   @ApiSuccessResponse(
     UserResponseDTO,
     UserResponseSchema,
@@ -78,5 +86,24 @@ export class UsersController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<UserResponse> {
     return this.usersAdminService.updateStatus(id, dto, currentUser.id);
+  }
+
+  @Patch(':id/role')
+  @ApiOperation({
+    summary:
+      'Gán vai trò Cán bộ / Phân quyền và chỉ định Hội tiếp nhận (Chỉ dành riêng cho Admin)',
+  })
+  @ApiParam({ name: 'id', description: 'UUID của người dùng' })
+  @ApiSuccessResponse(
+    UserResponseDTO,
+    UserResponseSchema,
+    'Cập nhật vai trò người dùng thành công',
+  )
+  async updateRole(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserRoleRequestDTO,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<UserResponse> {
+    return this.usersAdminService.updateRole(id, dto, currentUser.id);
   }
 }
