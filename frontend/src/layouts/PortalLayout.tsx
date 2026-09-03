@@ -186,7 +186,7 @@ export const PortalLayout: React.FC = () => {
                   {(user.fullName || 'U').charAt(0).toUpperCase()}
                 </div>
                 <span className="top-username">
-                  {user?.fullName ? user.fullName.split(' ').slice(-2).join(' ') : 'Tài khoản'}
+                  {user?.fullName || 'Tài khoản'}
                 </span>
                 <ChevronDown size={14} />
               </button>
