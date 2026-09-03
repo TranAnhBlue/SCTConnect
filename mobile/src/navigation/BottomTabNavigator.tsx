@@ -29,12 +29,14 @@ const TAB_CONFIG: Record<
 
 export const BottomTabNavigator: React.FC = () => {
   const { user, isAuthenticated } = useAuthStore();
+  const orgCode = (user?.organization?.code?.toLowerCase() || '') as any;
   const unreadCount = useNotificationStore((state) =>
-    state.getUnreadCountForUser(user?.role, user?.organization, isAuthenticated)
+    state.getUnreadCountForUser(user?.role, orgCode, isAuthenticated)
   );
 
   return (
     <Tab.Navigator
+      id="bottom-tab"
       screenOptions={({ route }) => {
         const config = TAB_CONFIG[route.name];
         return {

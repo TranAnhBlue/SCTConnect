@@ -31,7 +31,7 @@ export const NotificationsScreen: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
   const role = user?.role || 'citizen';
-  const org = user?.organization;
+  const org = (user?.organization?.code?.toLowerCase() || '') as any;
   const userNotifs = getNotificationsForUser(role, org, isAuthenticated);
 
   const filteredNotifs = filter === 'unread' ? userNotifs.filter((n) => !n.isRead) : userNotifs;

@@ -37,7 +37,7 @@ export const AccountScreen: React.FC = () => {
         <Text style={styles.name}>{isAuthenticated ? user?.fullName : 'Khách'}</Text>
         <Text style={styles.email}>
           {isAuthenticated
-            ? (isOfficer ? `${user?.titleName || 'Lãnh đạo Mặt trận'}: ${user?.department || 'Cơ quan MTTQ Xã'}` : `Số ĐT: ${user?.phone} • ${user?.commune || 'Xã Thanh Oai'}`)
+            ? (isOfficer ? `${user?.titleName || 'Lãnh đạo Mặt trận'}: ${user?.department || 'Cơ quan MTTQ Xã'}` : `Số ĐT: ${user?.phone} • ${user?.village?.name || 'Cấp Xã'}`)
             : 'Đăng nhập để gửi phản ánh & nhận thông báo từ Mặt trận Tổ quốc'}
         </Text>
 

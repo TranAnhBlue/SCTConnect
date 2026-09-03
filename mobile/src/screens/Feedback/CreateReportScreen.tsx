@@ -20,10 +20,15 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList, ReportCategory } from '../../types';
+import { IVillage, IOrganization, ICategory } from '../../types/api';
 import { Colors, Spacing, FontSize, BorderRadius, Shadow } from '../../constants';
 import { useReportStore } from '../../store/reportStore';
+import { useFeedbackStore } from '../../store/feedbackStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { administrativeService } from '../../api/administrativeService';
+import { feedbackService } from '../../api/feedbackService';
+import { uploadService } from '../../api/uploadService';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 
@@ -63,16 +68,21 @@ const VILLAGES = [
 export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
   const { user, isAuthenticated } = useAuthStore();
 
+  // Danh mục từ Backend thật
+  const [villagesList, setVillagesList] = useState<IVillage[]>([]);
+  const [orgsList, setOrgsList] = useState<IOrganization[]>([]);
+  const [categoriesList, setCategoriesList] = useState<ICategory[]>([]);
+
   // Form State matching UI Mockup
   const [reportType, setReportType] = useState<ReportTypeCategory>('incident');
   const [content, setContent] = useState('');
-  const [selectedOrg, setSelectedOrg] = useState<string>('farmers');
-  const [otherOrgText, setOtherOrgText] = useState('');
-  const [selectedVillage, setSelectedVillage] = useState<string>('Thôn 2, Xã Thanh Oai');
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+  const [selectedVillageId, setSelectedVillageId] = useState<string>('');
   const [showVillagePicker, setShowVillagePicker] = useState(false);
   const [phone, setPhone] = useState(user?.phone || '0912345678');
   const [agreedTerms, setAgreedTerms] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [isRecordingLive, setIsRecordingLive] = useState(false);
@@ -80,6 +90,29 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const recognitionRef = React.useRef<any>(null);
+
+  // Load danh mục động từ Backend khi mở màn hình
+  React.useEffect(() => {
+    administrativeService.getVillages().then((items) => {
+      setVillagesList(items);
+      if (items.length > 0) {
+        // Mặc định chọn thôn của người dùng hoặc thôn đầu tiên
+        const defaultV = items.find((v) => v.id === user?.villageId) || items[0];
+        setSelectedVillageId(defaultV.id);
+      }
+    });
+
+    administrativeService.getOrganizations().then((items) => {
+      setOrgsList(items);
+      if (items.length > 0) {
+        setSelectedOrgId(items[0].id);
+      }
+    });
+
+    administrativeService.getCategories().then((items) => {
+      setCategoriesList(items);
+    });
+  }, [user]);
 
   const handleStartVoiceRecord = async () => {
     setShowVoiceModal(true);
@@ -234,57 +267,56 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
       return;
     }
 
-    const typeLabelMap: Record<ReportTypeCategory, string> = {
-      incident: 'Phản ánh sự việc',
-      petition: 'Kiến nghị',
-      suggestion: 'Hiến kế',
-      environment_order: 'Môi trường, trật tự',
-    };
+    setSubmitting(true);
+    try {
+      const typeLabelMap: Record<ReportTypeCategory, string> = {
+        incident: 'Phản ánh sự việc',
+        petition: 'Kiến nghị',
+        suggestion: 'Hiến kế',
+        environment_order: 'Môi trường, trật tự',
+      };
 
-    const orgMapping: Record<string, { targetOrgKey: string; categoryKey: ReportCategory; deptName: string; orgTitle: string }> = {
-      farmers: { targetOrgKey: 'farmers', categoryKey: 'farmer_field', deptName: 'Hội Nông dân Xã (Khối MTTQ)', orgTitle: 'Hội Nông dân Xã' },
-      women: { targetOrgKey: 'women', categoryKey: 'women_field', deptName: 'Hội Liên hiệp Phụ nữ Xã (Khối MTTQ)', orgTitle: 'Hội LH Phụ nữ Xã' },
-      youth: { targetOrgKey: 'youth', categoryKey: 'youth_field', deptName: 'Đoàn TNCS Hồ Chí Minh Xã (Khối MTTQ)', orgTitle: 'Đoàn Thanh niên Xã' },
-      veterans: { targetOrgKey: 'veterans', categoryKey: 'veterans_field', deptName: 'Hội Cựu chiến binh Xã (Khối MTTQ)', orgTitle: 'Hội Cựu chiến binh Xã' },
-      union: { targetOrgKey: 'union', categoryKey: 'union_field', deptName: 'Công đoàn / LĐLĐ Xã (Khối MTTQ)', orgTitle: 'Công đoàn Xã' },
-      elderly: { targetOrgKey: 'mttq', categoryKey: 'supervision', deptName: 'Ban Thường trực Ủy ban MTTQ Việt Nam Xã', orgTitle: 'Ủy ban MTTQ Xã' },
-      other: { targetOrgKey: 'mttq', categoryKey: 'supervision', deptName: 'Ban Thường trực Ủy ban MTTQ Việt Nam Xã', orgTitle: 'Ủy ban MTTQ Xã' },
-      none: { targetOrgKey: 'mttq', categoryKey: 'supervision', deptName: 'Ban Thường trực Ủy ban MTTQ Việt Nam Xã', orgTitle: 'Ủy ban MTTQ Xã' },
-    };
+      const title = `[${typeLabelMap[reportType]}] ${content.trim().slice(0, 50)}...`;
 
-    const targetInfo = orgMapping[selectedOrg] || orgMapping.none;
+      // Chọn category ID tương ứng hoặc lấy category đầu tiên
+      const chosenCategory = categoriesList[0]?.id || 'cat-general';
+      const chosenOrg = selectedOrgId || orgsList[0]?.id;
+      const chosenVillage = selectedVillageId || villagesList[0]?.id;
 
-    const created = await useReportStore.getState().createReport(
-      `[${typeLabelMap[reportType]}] ${content.trim().slice(0, 45)}...`,
-      content.trim(),
-      selectedVillage,
-      targetInfo.categoryKey,
-      targetInfo.deptName,
-      selectedImage || 'https://picsum.photos/seed/user_new/400/250',
-      targetInfo.targetOrgKey,
-      user?.fullName || 'Trần Anh',
-      phone.trim() || user?.phone || '0912345678'
-    );
+      // Upload ảnh lên server qua API /api/v1/uploads/image nếu có
+      let uploadedUrls: string[] = [];
+      if (selectedImage) {
+        try {
+          const remoteUrl = await uploadService.uploadImage(selectedImage);
+          uploadedUrls.push(remoteUrl);
+        } catch (uploadErr) {
+          console.warn('Lỗi upload ảnh, tiếp tục gửi nội dung không kèm ảnh:', uploadErr);
+        }
+      }
 
-    // Trigger Notification for Receiving Officer
-    useNotificationStore.getState().addNotification({
-      title: '📩 Phản ánh mới từ Công dân',
-      message: `Công dân ${user?.fullName || 'Trần Anh'} vừa gửi ${typeLabelMap[reportType]} tới ${targetInfo.orgTitle}.`,
-      type: 'report_created',
-      targetRole: 'officer',
-      targetOrg: targetInfo.targetOrgKey as any,
-      senderName: user?.fullName || 'Trần Anh',
-      reportId: created.id,
-    });
+      const created = await feedbackService.createFeedback({
+        title,
+        content: content.trim(),
+        targetOrganizationId: chosenOrg,
+        incidentVillageId: chosenVillage,
+        categoryId: chosenCategory,
+        attachments: uploadedUrls,
+      });
 
-    Alert.alert('Gửi phản ánh thành công!', 'Ý kiến của bạn đã được tiếp nhận và chuyển đến cán bộ Thường trực Mặt trận Xã xử lý.', [
-      {
-        text: 'Xem chi tiết',
-        onPress: () => {
-          navigation.replace('ReportDetail', { id: created.id });
+      setSubmitting(false);
+
+      Alert.alert('Gửi phản ánh thành công!', 'Ý kiến của bạn đã được lưu vào hệ thống và chuyển đến cơ quan có thẩm quyền xử lý.', [
+        {
+          text: 'Xem danh sách',
+          onPress: () => {
+            navigation.replace('FieldReport');
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (err: any) {
+      setSubmitting(false);
+      Alert.alert('Gửi thất bại', err.message || 'Không thể gửi phản ánh tới hệ thống');
+    }
   };
 
   return (
@@ -407,50 +439,42 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
           )}
         </View>
 
-        {/* 4. Section: Bạn thuộc tổ chức nào? */}
+        {/* 4. Section: Tổ chức tiếp nhận phản ánh */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Bạn thuộc tổ chức nào?</Text>
-          <Text style={styles.subNote}>Không bắt buộc. Chọn một mục nếu bạn là hội viên, đoàn viên.</Text>
+          <Text style={styles.sectionTitle}>Gửi tới Tổ chức / Hội đoàn tiếp nhận <Text style={styles.req}>*</Text></Text>
+          <Text style={styles.subNote}>Chọn tổ chức bạn muốn phản ánh hoặc có thẩm quyền giải quyết.</Text>
 
           <View style={styles.chipWrap}>
-            {MEMBER_ORGS.map((org) => {
-              const isSelected = selectedOrg === org.key;
+            {orgsList.map((org) => {
+              const isSelected = selectedOrgId === org.id;
               return (
                 <TouchableOpacity
-                  key={org.key}
+                  key={org.id}
                   style={[styles.orgChip, isSelected && styles.orgChipActive]}
-                  onPress={() => setSelectedOrg(org.key)}
+                  onPress={() => setSelectedOrgId(org.id)}
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.orgChipText, isSelected && styles.orgChipTextActive]}>
-                    {org.label}
+                    {org.name}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-
-          {selectedOrg === 'other' && (
-            <TextInput
-              style={styles.otherInput}
-              placeholder="Ghi rõ tên tổ chức khác..."
-              placeholderTextColor="#999999"
-              value={otherOrgText}
-              onChangeText={setOtherOrgText}
-            />
-          )}
         </View>
 
         {/* 5. Section: Thôn, xóm * */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thôn, xóm <Text style={styles.req}>*</Text></Text>
+          <Text style={styles.sectionTitle}>Địa bàn phát sinh (Thôn, xóm) <Text style={styles.req}>*</Text></Text>
 
           <TouchableOpacity
             style={styles.pickerBox}
             onPress={() => setShowVillagePicker(!showVillagePicker)}
             activeOpacity={0.8}
           >
-            <Text style={styles.pickerText}>{selectedVillage}</Text>
+            <Text style={styles.pickerText}>
+              {villagesList.find(v => v.id === selectedVillageId)?.name || 'Chọn Thôn / Tổ dân phố'}
+            </Text>
             <MaterialCommunityIcons
               name={showVillagePicker ? 'chevron-up' : 'chevron-down'}
               size={22}
@@ -460,19 +484,19 @@ export const CreateReportScreen: React.FC<Props> = ({ navigation, route }) => {
 
           {showVillagePicker && (
             <View style={styles.villageList}>
-              {VILLAGES.map((v) => (
+              {villagesList.map((v) => (
                 <TouchableOpacity
-                  key={v}
-                  style={[styles.villageItem, selectedVillage === v && styles.villageItemActive]}
+                  key={v.id}
+                  style={[styles.villageItem, selectedVillageId === v.id && styles.villageItemActive]}
                   onPress={() => {
-                    setSelectedVillage(v);
+                    setSelectedVillageId(v.id);
                     setShowVillagePicker(false);
                   }}
                 >
-                  <Text style={[styles.villageText, selectedVillage === v && styles.villageTextActive]}>
-                    {v}
+                  <Text style={[styles.villageText, selectedVillageId === v.id && styles.villageTextActive]}>
+                    {v.name}
                   </Text>
-                  {selectedVillage === v && (
+                  {selectedVillageId === v.id && (
                     <MaterialCommunityIcons name="check" size={18} color="#9C1C24" />
                   )}
                 </TouchableOpacity>
@@ -637,15 +661,15 @@ const styles = StyleSheet.create({
     borderColor: '#F8D7DA',
   },
   logoCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 64,
+    height: 40,
+    borderRadius: 8,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#F6C4C8',
-    padding: 2,
+    padding: 3,
   },
   logoImg: { width: '100%', height: '100%' },
   bannerTextGroup: { flex: 1 },

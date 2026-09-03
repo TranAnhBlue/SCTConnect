@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, FieldReport, ReportCategory, ReportStatus } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 import { useReportStore } from '../../store/reportStore';
+import { useFeedbackStore } from '../../store/feedbackStore';
 import { useAuthStore } from '../../store/authStore';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
@@ -88,20 +89,50 @@ const ReportCard: React.FC<{ item: FieldReport; onPress: () => void }> = ({ item
 );
 
 export const FieldReportScreen: React.FC<Props> = ({ navigation }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [activeCategory, setActiveCategory] = useState<ReportCategory | 'all'>('all');
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const fieldReports = useReportStore((state) => state.fieldReports);
+
+  const feedbacks = useFeedbackStore((state) => state.feedbacks);
+  const isOfficer = isAuthenticated && (user?.userType === 'officer' || user?.userType === 'admin');
 
   useEffect(() => {
-    useReportStore.getState().fetchFieldReports();
-  }, []);
+    if (isOfficer) {
+      useFeedbackStore.getState().fetchOfficerFeedbacks();
+    } else {
+      useFeedbackStore.getState().fetchMyFeedbacks();
+    }
+  }, [isOfficer]);
+
+  // Map IFeedback từ API sang định dạng hiển thị thẻ FieldReport
+  const mappedReports: FieldReport[] = useMemo(() => {
+    return feedbacks.map((fb) => ({
+      id: fb.id,
+      title: fb.title,
+      description: fb.content,
+      address: fb.address || fb.incidentVillage?.name || 'Cấp Xã',
+      category: 'supervision',
+      status: fb.status === 'received' ? 'done' : fb.status === 'rejected' ? 'rejected' : 'pending',
+      imageUrl: fb.attachments?.[0]?.fileUrl,
+      createdAt: fb.createdAt,
+      timeAgo: fb.createdAt ? new Date(fb.createdAt).toLocaleDateString('vi-VN') : 'Mới',
+      likes: 0,
+      comments: 0,
+      reporterName: fb.user?.fullName,
+      reporterPhone: fb.user?.phone,
+      departmentAssigned: fb.targetOrganization?.name,
+      ubndResponse: fb.status === 'received' ? {
+        officerName: 'Cán bộ tiếp nhận',
+        department: fb.targetOrganization?.name || 'Ủy ban MTTQ Xã',
+        officialContent: 'Phản ánh đã được cơ quan có thẩm quyền tiếp nhận và chuyển giao bộ phận chuyên môn giải quyết.',
+        responseDate: fb.updatedAt ? new Date(fb.updatedAt).toLocaleDateString('vi-VN') : 'Đã tiếp nhận',
+      } : undefined,
+    }));
+  }, [feedbacks]);
 
   const filtered = useMemo(() => {
-    let list = activeCategory === 'all'
-      ? fieldReports
-      : fieldReports.filter(r => r.category === activeCategory);
+    let list = mappedReports;
     if (searchText.trim()) {
       list = list.filter(r =>
         r.title.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -109,7 +140,7 @@ export const FieldReportScreen: React.FC<Props> = ({ navigation }) => {
       );
     }
     return list;
-  }, [activeCategory, searchText, fieldReports]);
+  }, [searchText, mappedReports]);
 
   return (
     <SafeAreaView style={styles.safe}>

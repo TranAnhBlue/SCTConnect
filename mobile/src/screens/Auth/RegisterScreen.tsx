@@ -17,7 +17,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '../../constants';
-import { useAuthStore, MttqRole, MemberOrganization } from '../../store/authStore';
+import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../api/authService';
 
 type Props = {
@@ -79,38 +79,15 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     setLoading(true);
     try {
-      let role: MttqRole = 'citizen';
-      let org: MemberOrganization | undefined = undefined;
-      let titleName = 'Công dân Xã Thanh Oai';
-
-      if (accountType === 'youth') {
-        role = 'youth_leader';
-        org = 'youth';
-        titleName = 'Đoàn viên Thanh niên';
-      } else if (accountType === 'women') {
-        role = 'women_leader';
-        org = 'women';
-        titleName = 'Hội viên Phụ nữ';
-      } else if (accountType === 'veterans') {
-        role = 'veteran_leader';
-        org = 'veterans';
-        titleName = 'Hội viên Cựu chiến binh';
-      }
-
       await register({
         fullName: fullName.trim(),
         phone: cleanPhone,
         password,
-        email: email.trim() || undefined,
-        role,
-        organization: org,
-        titleName,
-        department: `Ủy ban MTTQ & Nhân dân ${selectedVillage}`,
       });
 
       Alert.alert(
         'Đăng ký thành công 🎉',
-        `Chào mừng ${fullName.trim()} đã đăng ký tài khoản SCTConnect MTTQ Xã Thanh Oai!`,
+        `Chào mừng ${fullName.trim()} đã gia nhập SCT Connect!`,
         [
           {
             text: 'Bắt đầu sử dụng',

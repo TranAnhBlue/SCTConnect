@@ -5,8 +5,8 @@ export type RootStackParamList = {
   AdminProcedure: undefined;
   FeedbackMap: undefined;
   CitizenReception: undefined;
-  CreateReport: { type: 'field' | 'admin' };
-  ReportDetail: { id: string };
+  CreateReport: { type?: 'field' | 'admin' } | undefined;
+  ReportDetail: { id?: string } | undefined;
   Login: undefined;
   Register: undefined;
 };

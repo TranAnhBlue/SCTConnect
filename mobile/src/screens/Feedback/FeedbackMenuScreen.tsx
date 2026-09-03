@@ -13,7 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 import { AppBar } from '../../components/common';
-import { feedbackMenuItems } from '../../api/mockData';
+import { feedbackMenuFeatures, AppFeatureItem } from '../../constants/features';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -42,9 +42,9 @@ export const FeedbackMenuScreen: React.FC<Props> = ({ navigation }) => {
     if (screen) navigation.navigate(screen as any);
   };
 
-  // Split into rows: 4 items first row, 1 item second row (matching screenshot)
-  const firstRow = feedbackMenuItems.slice(0, 4);
-  const secondRow = feedbackMenuItems.slice(4);
+  // Split into rows: 4 items
+  const firstRow = feedbackMenuFeatures.slice(0, 4);
+  const secondRow = feedbackMenuFeatures.slice(4);
 
   return (
     <SafeAreaView style={styles.safe}>

@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { smartCityServices, ServiceItem } from '../../api/mockData';
+import { appFeatures, AppFeatureItem } from '../../constants/features';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 
 interface ServiceGridProps {
-  onServicePress: (service: ServiceItem) => void;
+  onServicePress: (service: AppFeatureItem) => void;
 }
 
 const ServiceCell: React.FC<{
-  item: ServiceItem;
+  item: AppFeatureItem;
   onPress: () => void;
 }> = ({ item, onPress }) => (
   <TouchableOpacity style={styles.cell} onPress={onPress} activeOpacity={0.75}>
@@ -21,9 +21,9 @@ const ServiceCell: React.FC<{
 );
 
 export const ServiceGrid: React.FC<ServiceGridProps> = ({ onServicePress }) => {
-  // Row 1: items 0-3, Row 2: items 4-6
-  const row1 = smartCityServices.slice(0, 4);
-  const row2 = smartCityServices.slice(4);
+  // Row 1: items 0-2, Row 2: items 3-5
+  const row1 = appFeatures.slice(0, 3);
+  const row2 = appFeatures.slice(3, 6);
 
   return (
     <View style={styles.container}>

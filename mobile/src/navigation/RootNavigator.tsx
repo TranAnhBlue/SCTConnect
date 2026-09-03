@@ -20,6 +20,7 @@ export const RootNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        id="root-stack"
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',

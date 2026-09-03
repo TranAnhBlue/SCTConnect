@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { newServices } from '../../api/mockData';
+import { appFeatures } from '../../constants/features';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 
 import { useAuthStore } from '../../store/authStore';
@@ -37,7 +37,7 @@ export const NewServicesRow: React.FC = () => {
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.scroll}
     >
-      {newServices.map(item => (
+      {appFeatures.map(item => (
         <TouchableOpacity key={item.id} style={styles.item} activeOpacity={0.75} onPress={() => handlePress(item.screen)}>
           <View style={[styles.iconBox, { backgroundColor: item.backgroundColor }]}>
             <MaterialCommunityIcons name={item.iconName as any} size={26} color={item.color} />

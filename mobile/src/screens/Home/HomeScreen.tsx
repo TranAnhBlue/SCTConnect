@@ -14,8 +14,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
-import { BannerCarousel, ServiceGrid, NewServicesRow } from '../../components/home';
-import { ServiceItem } from '../../api/mockData';
+import { BannerCarousel, ServiceGrid } from '../../components/home';
+import { AppFeatureItem } from '../../constants/features';
 import { useAuthStore } from '../../store/authStore';
 import { OfficerHomeScreen } from './OfficerHomeScreen';
 
@@ -48,7 +48,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
     return false;
   };
 
-  const handleServicePress = (service: ServiceItem) => {
+  const handleServicePress = (service: AppFeatureItem) => {
     if (promptLoginForGuest()) return;
     if (service.screen) {
       navigation.navigate(service.screen as any);
@@ -121,14 +121,14 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   avatarBox: {
-    width: 40,
-    height: 40,
+    width: 60,
+    height: 38,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    padding: 2,
+    padding: 3,
   },
   logoImage: {
     width: '100%',

@@ -51,11 +51,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      await login(phone.trim(), password, role === 'officer' ? 'mttq_president' : 'citizen');
+      await login(phone.trim(), password);
       setIsLoading(false);
-      Alert.alert('Đăng nhập thành công!', 'Tài khoản đã được xác thực từ MongoDB Cloud Database.', [
+      Alert.alert('Đăng nhập thành công!', 'Chào mừng bạn quay lại SCT Connect.', [
         {
-          text: 'Vào Bảng điều khiển',
+          text: 'Vào Trang chủ',
           onPress: () => {
             navigation.popToTop();
           },
@@ -63,7 +63,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       ]);
     } catch (err: any) {
       setIsLoading(false);
-      Alert.alert('Đăng nhập thất bại', err.message || 'Số điện thoại hoặc thông tin không hợp lệ');
+      Alert.alert('Đăng nhập thất bại', err.message || 'Số điện thoại hoặc mật khẩu không chính xác');
     }
   };
 
@@ -75,22 +75,20 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     setIsRegistering(true);
     try {
-      const res = await authService.registerApi({
+      await authService.registerApi({
         fullName: regName.trim(),
         phone: regPhone.trim(),
         password: regPassword.trim(),
-        role: regRole,
-        department: regRole !== 'citizen' ? 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã' : undefined,
       });
 
       // Automatically login after successful registration
-      await login(regPhone.trim(), regPassword.trim(), regRole, regName.trim());
+      await login(regPhone.trim(), regPassword.trim());
       setIsRegistering(false);
       setShowRegisterModal(false);
 
       Alert.alert(
         '🎉 Đăng ký thành công!',
-        `Tài khoản "${regName.trim()}" với Mật khẩu đã chọn được bảo mật trên MongoDB Cloud Database.`,
+        `Chào mừng "${regName.trim()}" đến với SCT Connect!`,
         [
           {
             text: 'Bắt đầu sử dụng',
@@ -112,17 +110,17 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     setPassword('123456');
     setIsLoading(true);
     setTimeout(async () => {
-      await login('0912345678', '123456', 'citizen', 'Trần Anh (Công dân)');
-      setIsLoading(false);
-      Alert.alert('Đã đăng nhập!', 'Bạn đang sử dụng quyền Công Dân.', [
-        {
-          text: 'Trải nghiệm ngay',
-          onPress: () => {
-            navigation.popToTop();
-          },
-        },
-      ]);
-    }, 500);
+      try {
+        await login('0912345678', '123456');
+        setIsLoading(false);
+        Alert.alert('Đã đăng nhập!', 'Bạn đang sử dụng quyền Công Dân.', [
+          { text: 'Trải nghiệm ngay', onPress: () => navigation.popToTop() },
+        ]);
+      } catch (e: any) {
+        setIsLoading(false);
+        Alert.alert('Lỗi đăng nhập', e.message || 'Không thể đăng nhập tài khoản mẫu');
+      }
+    }, 400);
   };
 
   const handleQuickLoginOfficer = async () => {
@@ -131,17 +129,17 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     setPassword('123456');
     setIsLoading(true);
     setTimeout(async () => {
-      await login('0988123456', '123456', 'officer', 'Nguyễn Văn Minh (Cán bộ Mặt trận)', 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã');
-      setIsLoading(false);
-      Alert.alert('Đã đăng nhập!', 'Bạn đang sử dụng quyền Cán Bộ Mặt Trận.', [
-        {
-          text: 'Bắt đầu công tác',
-          onPress: () => {
-            navigation.popToTop();
-          },
-        },
-      ]);
-    }, 500);
+      try {
+        await login('0988123456', '123456');
+        setIsLoading(false);
+        Alert.alert('Đã đăng nhập!', 'Bạn đang sử dụng quyền Cán Bộ.', [
+          { text: 'Bắt đầu công tác', onPress: () => navigation.popToTop() },
+        ]);
+      } catch (e: any) {
+        setIsLoading(false);
+        Alert.alert('Lỗi đăng nhập', e.message || 'Không thể đăng nhập tài khoản mẫu');
+      }
+    }, 400);
   };
 
   return (
@@ -311,11 +309,16 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               style={styles.demoBtnCitizen}
               onPress={async () => {
                 setIsLoading(true);
-                await login('0912345678', '123456', 'citizen', 'Trần Anh (Công dân)');
-                setIsLoading(false);
-                Alert.alert('Đăng nhập thành công!', 'Bạn đang dùng quyền Công dân / Đoàn viên / Hội viên.', [
-                  { text: 'Trải nghiệm ngay', onPress: () => navigation.popToTop() },
-                ]);
+                try {
+                  await login('0912345678', '123456');
+                  setIsLoading(false);
+                  Alert.alert('Đăng nhập thành công!', 'Bạn đang dùng quyền Công dân.', [
+                    { text: 'Trải nghiệm ngay', onPress: () => navigation.popToTop() },
+                  ]);
+                } catch (e: any) {
+                  setIsLoading(false);
+                  Alert.alert('Lỗi', e.message);
+                }
               }}
             >
               <MaterialCommunityIcons name="account-check" size={16} color={Colors.primary} />
@@ -327,26 +330,36 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 style={[styles.demoOrgBtn, { backgroundColor: '#FFEBEE', borderColor: '#FFCDD2' }]}
                 onPress={async () => {
                   setIsLoading(true);
-                  await login('0988123456', '123456', 'mttq_president', 'Đồng chí Nguyễn Văn Minh', 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã', 'mttq', 'Chủ tịch Ủy ban MTTQ Xã');
-                  setIsLoading(false);
-                  Alert.alert('Đăng nhập thành công!', 'Quyền: Chủ tịch Ủy ban MTTQ Xã (Người đứng đầu Cơ quan).', [
-                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
-                  ]);
+                  try {
+                    await login('0988123456', '123456');
+                    setIsLoading(false);
+                    Alert.alert('Đăng nhập thành công!', 'Tài khoản Lãnh đạo cấp Xã.', [
+                      { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                    ]);
+                  } catch (e: any) {
+                    setIsLoading(false);
+                    Alert.alert('Lỗi', e.message);
+                  }
                 }}
               >
                 <MaterialCommunityIcons name="shield-account" size={16} color="#B71C1C" />
-                <Text style={[styles.demoOrgText, { color: '#B71C1C' }]}>👑 Chủ tịch Ủy ban MTTQ</Text>
+                <Text style={[styles.demoOrgText, { color: '#B71C1C' }]}>👑 Lãnh đạo MTTQ Xã</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.demoOrgBtn, { backgroundColor: '#E3F2FD', borderColor: '#BBDEFB' }]}
                 onPress={async () => {
                   setIsLoading(true);
-                  await login('0988111222', '123456', 'youth_leader', 'Đồng chí Lê Hoàng Nam', 'Đoàn TNCS Hồ Chí Minh Xã', 'youth', 'Phó Chủ tịch MTTQ kiêm Bí thư Đoàn');
-                  setIsLoading(false);
-                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Bí thư Đoàn Thanh niên.', [
-                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
-                  ]);
+                  try {
+                    await login('0988111222', '123456');
+                    setIsLoading(false);
+                    Alert.alert('Đăng nhập thành công!', 'Tài khoản Đoàn Thanh niên.', [
+                      { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                    ]);
+                  } catch (e: any) {
+                    setIsLoading(false);
+                    Alert.alert('Lỗi', e.message);
+                  }
                 }}
               >
                 <MaterialCommunityIcons name="flag" size={16} color="#1565C0" />
@@ -357,11 +370,16 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 style={[styles.demoOrgBtn, { backgroundColor: '#FCE4EC', borderColor: '#F8BBD0' }]}
                 onPress={async () => {
                   setIsLoading(true);
-                  await login('0988333444', '123456', 'women_leader', 'Đồng chí Phạm Thị Mai', 'Hội Liên hiệp Phụ nữ Xã', 'women', 'Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Phụ nữ');
-                  setIsLoading(false);
-                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Phụ nữ.', [
-                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
-                  ]);
+                  try {
+                    await login('0988333444', '123456');
+                    setIsLoading(false);
+                    Alert.alert('Đăng nhập thành công!', 'Tài khoản Hội Phụ nữ.', [
+                      { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                    ]);
+                  } catch (e: any) {
+                    setIsLoading(false);
+                    Alert.alert('Lỗi', e.message);
+                  }
                 }}
               >
                 <MaterialCommunityIcons name="human-female" size={16} color="#C2185B" />
@@ -372,11 +390,16 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 style={[styles.demoOrgBtn, { backgroundColor: '#E8F5E9', borderColor: '#C8E6C9' }]}
                 onPress={async () => {
                   setIsLoading(true);
-                  await login('0988555666', '123456', 'veteran_leader', 'Đồng chí Trần Văn Hùng', 'Hội Cựu chiến binh Xã', 'veterans', 'Phó Chủ tịch MTTQ kiêm Chủ tịch Hội CCB');
-                  setIsLoading(false);
-                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Cựu Chiến Binh.', [
-                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
-                  ]);
+                  try {
+                    await login('0988555666', '123456');
+                    setIsLoading(false);
+                    Alert.alert('Đăng nhập thành công!', 'Tài khoản Hội Cựu chiến binh.', [
+                      { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                    ]);
+                  } catch (e: any) {
+                    setIsLoading(false);
+                    Alert.alert('Lỗi', e.message);
+                  }
                 }}
               >
                 <MaterialCommunityIcons name="medal" size={16} color="#2E7D32" />
@@ -387,11 +410,16 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 style={[styles.demoOrgBtn, { backgroundColor: '#F9FBE7', borderColor: '#F0F4C3' }]}
                 onPress={async () => {
                   setIsLoading(true);
-                  await login('0988777888', '123456', 'farmer_leader', 'Đồng chí Nguyễn Văn Nông', 'Hội Nông dân Xã', 'farmers', 'Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Nông dân');
-                  setIsLoading(false);
-                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Chủ tịch Hội Nông Dân.', [
-                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
-                  ]);
+                  try {
+                    await login('0988777888', '123456');
+                    setIsLoading(false);
+                    Alert.alert('Đăng nhập thành công!', 'Tài khoản Hội Nông dân.', [
+                      { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                    ]);
+                  } catch (e: any) {
+                    setIsLoading(false);
+                    Alert.alert('Lỗi', e.message);
+                  }
                 }}
               >
                 <MaterialCommunityIcons name="sprout" size={16} color="#827717" />
@@ -402,11 +430,16 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 style={[styles.demoOrgBtn, { backgroundColor: '#FFF3E0', borderColor: '#FFE0B2' }]}
                 onPress={async () => {
                   setIsLoading(true);
-                  await login('0988999000', '123456', 'union_leader', 'Đồng chí Hoàng Văn Công', 'Công đoàn / LĐLĐ Xã', 'union', 'Phó Chủ tịch MTTQ kiêm Chủ tịch Công đoàn');
-                  setIsLoading(false);
-                  Alert.alert('Đăng nhập thành công!', 'Quyền: Phó Chủ tịch MTTQ kiêm Chủ tịch Công Đoàn.', [
-                    { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
-                  ]);
+                  try {
+                    await login('0988999000', '123456');
+                    setIsLoading(false);
+                    Alert.alert('Đăng nhập thành công!', 'Tài khoản Công đoàn.', [
+                      { text: 'Vào Bảng điều khiển', onPress: () => navigation.popToTop() },
+                    ]);
+                  } catch (e: any) {
+                    setIsLoading(false);
+                    Alert.alert('Lỗi', e.message);
+                  }
                 }}
               >
                 <MaterialCommunityIcons name="tools" size={16} color="#E65100" />
@@ -542,7 +575,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brandContainer: { alignItems: 'center', marginTop: Spacing.xs },
-  logoImage: { width: 140, height: 110, marginBottom: Spacing.xs },
+  logoImage: { width: 220, height: 90, marginBottom: Spacing.sm },
   appName: { fontSize: FontSize.xxl || 22, fontWeight: '800', color: Colors.primary },
   appDesc: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2, textAlign: 'center' },
 

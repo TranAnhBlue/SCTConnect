@@ -1,70 +1,25 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../api/authService';
-
-const AUTH_TOKEN_KEY = '@sctconnect_auth_token';
-
-export type MttqRole =
-  | 'citizen'
-  | 'officer'
-  | 'admin'
-  | 'mttq_president'
-  | 'youth_leader'
-  | 'women_leader'
-  | 'veteran_leader'
-  | 'union_leader'
-  | 'farmer_leader';
-
-export type MemberOrganization =
-  | 'mttq'
-  | 'youth'
-  | 'women'
-  | 'veterans'
-  | 'union'
-  | 'farmers';
-
-export interface User {
-  id: string;
-  fullName: string;
-  phone: string;
-  email?: string;
-  role: MttqRole;
-  organization?: MemberOrganization;
-  titleName?: string;
-  department?: string;
-  commune: string;
-  district: string;
-  avatarUrl?: string;
-}
+import { AUTH_TOKEN_KEY, USER_INFO_KEY } from '../api/axios';
+import { IUser } from '../types/api';
 
 interface AuthState {
   isAuthenticated: boolean;
-  user: User | null;
+  user: IUser | null;
   token: string | null;
   isInitializing: boolean;
 
   initAuth: () => Promise<void>;
-  login: (
-    phone: string,
-    password?: string,
-    role?: MttqRole,
-    name?: string,
-    dept?: string,
-    org?: MemberOrganization,
-    titleName?: string
-  ) => Promise<void>;
+  login: (phone: string, password?: string) => Promise<void>;
   register: (data: {
     fullName: string;
     phone: string;
     password?: string;
-    email?: string;
-    role?: MttqRole;
-    organization?: MemberOrganization;
-    titleName?: string;
-    department?: string;
+    villageId?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
-  setUser: (user: User) => void;
+  setUser: (user: IUser) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -82,8 +37,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (fetchedUser) {
           set({ isAuthenticated: true, user: fetchedUser });
         } else {
-          await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-          set({ token: null, isAuthenticated: false, user: null });
+          // Kiểm tra xem có cache user info offline không
+          const cachedUser = await AsyncStorage.getItem(USER_INFO_KEY);
+          if (cachedUser) {
+            set({ isAuthenticated: true, user: JSON.parse(cachedUser) });
+          } else {
+            set({ token: null, isAuthenticated: false, user: null });
+          }
         }
       }
     } catch (e) {
@@ -93,19 +53,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  login: async (
-    phone: string,
-    password = '',
-    role: MttqRole = 'citizen',
-    name?: string,
-    dept?: string,
-    org?: MemberOrganization,
-    titleName?: string
-  ) => {
-    const res = await authService.loginApi(phone, password, role, name, dept, org, titleName);
-    if (res.token) {
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, res.token);
-    }
+  login: async (phone: string, password = '') => {
+    const res = await authService.loginApi(phone, password);
     set({
       isAuthenticated: true,
       user: res.user,
@@ -115,9 +64,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   register: async (data) => {
     const res = await authService.registerApi(data);
-    if (res.token) {
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, res.token);
-    }
     set({
       isAuthenticated: true,
       user: res.user,
@@ -127,7 +73,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+      await authService.logoutApi();
     } catch (e) {
       console.warn('Error clearing auth token:', e);
     }

@@ -112,15 +112,28 @@ const ROLE_CONFIGS: Record<string, RoleThemeConfig> = {
 export const OfficerHomeScreen: React.FC<Props> = ({ navigation }) => {
   const { user, isAuthenticated } = useAuthStore();
   const fieldReports = useReportStore((state) => state.fieldReports);
-  const unreadCount = useNotificationStore((state) =>
-    state.getUnreadCountForUser(user?.role, user?.organization, isAuthenticated)
-  );
 
   // Determine specific role config
-  const userOrgKey = user?.organization || (user?.role === 'youth_leader' ? 'youth' : user?.role === 'women_leader' ? 'women' : user?.role === 'veteran_leader' ? 'veterans' : user?.role === 'union_leader' ? 'union' : user?.role === 'farmer_leader' ? 'farmers' : 'mttq');
+  const orgCode = user?.organization?.code?.toLowerCase() || '';
+  const userOrgKey: string = orgCode.includes('youth') || orgCode.includes('thanhnien')
+    ? 'youth'
+    : orgCode.includes('women') || orgCode.includes('phunu')
+    ? 'women'
+    : orgCode.includes('veteran') || orgCode.includes('cuuchienbinh')
+    ? 'veterans'
+    : orgCode.includes('union') || orgCode.includes('congdoan')
+    ? 'union'
+    : orgCode.includes('farmer') || orgCode.includes('nongdan')
+    ? 'farmers'
+    : (user?.role === 'youth_leader' ? 'youth' : user?.role === 'women_leader' ? 'women' : user?.role === 'veteran_leader' ? 'veterans' : user?.role === 'union_leader' ? 'union' : user?.role === 'farmer_leader' ? 'farmers' : 'mttq');
+
   const roleConfig = ROLE_CONFIGS[userOrgKey] || ROLE_CONFIGS.mttq;
 
-  const isMttqPresident = user?.role === 'mttq_president' || user?.role === 'admin';
+  const unreadCount = useNotificationStore((state) =>
+    state.getUnreadCountForUser(user?.role, userOrgKey as any, isAuthenticated)
+  );
+
+  const isMttqPresident = user?.role === 'mttq_president' || user?.userType === 'admin';
   const defaultOrgFilter = isMttqPresident ? 'all' : userOrgKey;
   const [activeOrg, setActiveOrg] = React.useState<string>(defaultOrgFilter);
 

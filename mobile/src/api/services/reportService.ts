@@ -140,10 +140,10 @@ export const reportService = {
       if (res.data?.success && res.data.data) {
         return res.data.data;
       }
-      return { totalReports: 0, resolvedReports: 0, processingReports: 0, pendingReports: 0, overdueReports: 0, satisfactionRate: 100, avgRating: 5.0 };
+      return { pending: 0, processing: 0, done: 0, rejected: 0 };
     } catch (err) {
       console.warn('API Error fetching report stats:', err);
-      return { totalReports: 0, resolvedReports: 0, processingReports: 0, pendingReports: 0, overdueReports: 0, satisfactionRate: 100, avgRating: 5.0 };
+      return { pending: 0, processing: 0, done: 0, rejected: 0 };
     }
   },
 

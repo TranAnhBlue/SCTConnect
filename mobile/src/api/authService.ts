@@ -1,56 +1,40 @@
-import apiClient from './axios';
-import { User, MttqRole, MemberOrganization } from '../store/authStore';
+import apiClient, { AUTH_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_INFO_KEY } from './axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { IUser } from '../types/api';
 
 export interface LoginResponse {
   success: boolean;
   token: string;
-  user: User;
+  refreshToken?: string;
+  user: IUser;
   message?: string;
 }
 
-const mapRawUser = (rawUser: any, fallbackRole?: MttqRole, fallbackName?: string, fallbackDept?: string, fallbackOrg?: MemberOrganization, fallbackTitle?: string): User => {
-  const isOfficer = (rawUser?.role && rawUser.role !== 'citizen') || (fallbackRole && fallbackRole !== 'citizen');
-  return {
-    id: rawUser._id || rawUser.id || `usr_${Date.now()}`,
-    fullName: rawUser.fullName || fallbackName || 'Người dùng MTTQ',
-    phone: rawUser.phone || '0912345678',
-    email: rawUser.email,
-    role: (rawUser.role as MttqRole) || fallbackRole || 'citizen',
-    organization: (rawUser.organization as MemberOrganization) || fallbackOrg || (isOfficer ? 'mttq' : undefined),
-    titleName: rawUser.titleName || fallbackTitle || (isOfficer ? 'Lãnh đạo Mặt trận Xã' : 'Công dân'),
-    department: rawUser.department || fallbackDept || 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
-    commune: rawUser.commune || 'Ủy ban MTTQ Thuận An',
-    district: rawUser.district || 'Thành phố Thuận An',
-    avatarUrl: rawUser.avatarUrl || (isOfficer ? 'https://picsum.photos/seed/mttq_officer/200/200' : 'https://picsum.photos/seed/citizen/200/200'),
-  };
-};
-
 export const authService = {
-  loginApi: async (
-    phone: string,
-    password?: string,
-    role?: MttqRole,
-    name?: string,
-    dept?: string,
-    org?: MemberOrganization,
-    titleName?: string
-  ): Promise<LoginResponse> => {
+  loginApi: async (phone: string, password?: string): Promise<LoginResponse> => {
     try {
       const response = await apiClient.post('/auth/login', {
         phone,
         password,
-        role,
-        fullName: name,
-        department: dept,
-        organization: org,
-        titleName,
       });
 
-      if (response.data?.success && response.data?.user) {
+      const data = response.data?.data || response.data;
+      const token = data?.token;
+      const refreshToken = data?.refreshToken;
+      const user = data?.user;
+
+      if (token && user) {
+        await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+        if (refreshToken) {
+          await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        }
+        await AsyncStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+
         return {
           success: true,
-          token: response.data.token,
-          user: mapRawUser(response.data.user, role, name, dept, org, titleName),
+          token,
+          refreshToken,
+          user,
         };
       }
       throw new Error(response.data?.message || 'Đăng nhập thất bại');
@@ -58,37 +42,28 @@ export const authService = {
       if (err.response?.data?.message) {
         throw new Error(err.response.data.message);
       }
-      console.warn('⚠️ API Auth Login offline/warning:', err.message);
-      const isOfficer = role && role !== 'citizen';
-      const fallbackUser: User = {
-        id: isOfficer ? `officer_${role}` : 'citizen_1',
-        fullName: name || (isOfficer ? 'Đồng chí Nguyễn Văn Minh' : 'Trần Anh'),
-        phone: phone || '0988123456',
-        role: role || 'citizen',
-        organization: org || (isOfficer ? 'mttq' : undefined),
-        titleName: titleName || (isOfficer ? 'Chủ tịch Ủy ban MTTQ Việt Nam Xã' : 'Công dân'),
-        department: dept || 'Ủy ban Mặt trận Tổ quốc Việt Nam Xã',
-        commune: 'Ủy ban MTTQ Thuận An',
-        district: 'Thành phố Thuận An',
-        avatarUrl: isOfficer ? 'https://picsum.photos/seed/mttq_officer/200/200' : 'https://picsum.photos/seed/citizen/200/200',
-      };
-      return {
-        success: true,
-        token: `sct_token_fallback_${Date.now()}`,
-        user: fallbackUser,
-      };
+      throw err;
     }
   },
 
-  getProfileApi: async (): Promise<User | null> => {
+  getProfileApi: async (): Promise<IUser | null> => {
     try {
       const response = await apiClient.get('/auth/me');
-      if (response.data?.success && response.data?.data) {
-        return mapRawUser(response.data.data);
+      const user = response.data?.data || response.data;
+      if (user?.id) {
+        await AsyncStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+        return user;
       }
       return null;
     } catch (err) {
       console.warn('API Error fetching user profile:', err);
+      // Fallback từ local storage nếu đang offline
+      const stored = await AsyncStorage.getItem(USER_INFO_KEY);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {}
+      }
       return null;
     }
   },
@@ -97,19 +72,27 @@ export const authService = {
     fullName: string;
     phone: string;
     password?: string;
-    email?: string;
-    role?: MttqRole;
-    organization?: MemberOrganization;
-    titleName?: string;
-    department?: string;
+    villageId?: string;
   }): Promise<LoginResponse> => {
     try {
       const response = await apiClient.post('/auth/register', data);
-      if (response.data?.success && response.data?.user) {
+      const resData = response.data?.data || response.data;
+      const token = resData?.token;
+      const refreshToken = resData?.refreshToken;
+      const user = resData?.user;
+
+      if (token && user) {
+        await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+        if (refreshToken) {
+          await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        }
+        await AsyncStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+
         return {
           success: true,
-          token: response.data.token,
-          user: mapRawUser(response.data.user, data.role, data.fullName, data.department, data.organization, data.titleName),
+          token,
+          refreshToken,
+          user,
         };
       }
       throw new Error(response.data?.message || 'Đăng ký không thành công');
@@ -120,5 +103,8 @@ export const authService = {
       throw err;
     }
   },
-};
 
+  logoutApi: async (): Promise<void> => {
+    await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_INFO_KEY]);
+  },
+};

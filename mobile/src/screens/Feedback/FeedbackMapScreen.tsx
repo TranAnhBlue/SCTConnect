@@ -14,7 +14,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, DistrictReport } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
-import { mockStats, mockDistrictReports } from '../../api/mockData';
+import { administrativeService } from '../../api/administrativeService';
+import { feedbackService } from '../../api/feedbackService';
+import { IFeedbackStatistics, IVillage } from '../../types/api';
+import { useAuthStore } from '../../store/authStore';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
@@ -93,13 +96,34 @@ const DistrictCard: React.FC<{ item: DistrictReport }> = ({ item }) => (
   </View>
 );
 
-import { useAuthStore } from '../../store/authStore';
-
 export const FeedbackMapScreen: React.FC<Props> = ({ navigation }) => {
   const { isAuthenticated } = useAuthStore();
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [villages, setVillages] = useState<IVillage[]>([]);
+  const [stats, setStats] = useState<IFeedbackStatistics | null>(null);
+
+  React.useEffect(() => {
+    administrativeService.getVillages().then(setVillages);
+    feedbackService.getStatistics().then(setStats);
+  }, []);
+
+  const districtReports: DistrictReport[] = React.useMemo(() => {
+    return villages.map(v => ({
+      id: v.id,
+      name: v.name,
+      total: 0,
+      pending: 0,
+      processing: 0,
+      done: 0,
+      rejected: 0,
+      overdue: 0,
+      satisfied: 0,
+      dissatisfied: 0,
+      veryDissatisfied: 0,
+    }));
+  }, [villages]);
 
   const checkPinAuth = (title: string, msg: string) => {
     if (!isAuthenticated) {
@@ -116,7 +140,7 @@ export const FeedbackMapScreen: React.FC<Props> = ({ navigation }) => {
     Alert.alert(title, msg);
   };
 
-  const filtered = mockDistrictReports.filter(d =>
+  const filtered = districtReports.filter(d =>
     d.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -139,28 +163,28 @@ export const FeedbackMapScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.statsBar}>
         <View style={styles.statBox}>
           <Text style={[styles.statNum, { color: Colors.statusPending }]}>
-            {mockStats.pending.toLocaleString('vi-VN')}
+            {(stats?.totalPending || 0).toLocaleString('vi-VN')}
           </Text>
           <Text style={styles.statLabel}>Chờ xử lý</Text>
         </View>
         <View style={styles.vertDiv} />
         <View style={styles.statBox}>
           <Text style={[styles.statNum, { color: Colors.statusProcessing }]}>
-            {mockStats.processing.toLocaleString('vi-VN')}
+            {(stats?.totalReceived || 0).toLocaleString('vi-VN')}
           </Text>
-          <Text style={styles.statLabel}>Đang xử lý</Text>
+          <Text style={styles.statLabel}>Đã tiếp nhận</Text>
         </View>
         <View style={styles.vertDiv} />
         <View style={styles.statBox}>
           <Text style={[styles.statNum, { color: Colors.statusDone }]}>
-            {mockStats.done.toLocaleString('vi-VN')}
+            {(stats?.totalFeedbacks || 0).toLocaleString('vi-VN')}
           </Text>
-          <Text style={styles.statLabel}>Đã xử lý</Text>
+          <Text style={styles.statLabel}>Tổng số</Text>
         </View>
         <View style={styles.vertDiv} />
         <View style={styles.statBox}>
           <Text style={[styles.statNum, { color: Colors.statusRejected }]}>
-            {mockStats.rejected.toLocaleString('vi-VN')}
+            {(stats?.totalRejected || 0).toLocaleString('vi-VN')}
           </Text>
           <Text style={styles.statLabel}>Từ chối</Text>
         </View>

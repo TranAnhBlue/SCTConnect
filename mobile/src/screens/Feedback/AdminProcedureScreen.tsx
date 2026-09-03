@@ -14,15 +14,15 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, AdminProcedureReport, ReportStatus } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
-import { mockAdminReports } from '../../api/mockData';
 import { useAuthStore } from '../../store/authStore';
+import { useFeedbackStore } from '../../store/feedbackStore';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
 const STATUS_LABEL: Record<ReportStatus, string> = {
   pending: 'Chờ xử lý',
   processing: 'Đang xử lý',
-  done: 'Đã xử lý',
+  done: 'Đã tiếp nhận',
   rejected: 'Từ chối',
 };
 const STATUS_COLOR: Record<ReportStatus, string> = {
@@ -53,17 +53,39 @@ const ReportRow: React.FC<{ item: AdminProcedureReport }> = ({ item }) => (
 );
 
 export const AdminProcedureScreen: React.FC<Props> = ({ navigation }) => {
+  const { user, isAuthenticated } = useAuthStore();
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
 
+  const feedbacks = useFeedbackStore((state) => state.feedbacks);
+  const isOfficer = isAuthenticated && (user?.userType === 'officer' || user?.userType === 'admin');
+
+  React.useEffect(() => {
+    if (isOfficer) {
+      useFeedbackStore.getState().fetchOfficerFeedbacks();
+    } else {
+      useFeedbackStore.getState().fetchMyFeedbacks();
+    }
+  }, [isOfficer]);
+
+  const mappedReports: AdminProcedureReport[] = React.useMemo(() => {
+    return feedbacks.map(fb => ({
+      id: fb.id,
+      code: fb.code || fb.id.slice(0, 8),
+      title: fb.title,
+      reporterName: fb.user?.fullName || 'Công dân',
+      status: fb.status === 'received' ? 'done' : fb.status === 'rejected' ? 'rejected' : 'pending',
+      createdAt: fb.createdAt,
+      timeAgo: fb.createdAt ? new Date(fb.createdAt).toLocaleDateString('vi-VN') : 'Mới',
+    }));
+  }, [feedbacks]);
+
   const filtered = searchText.trim()
-    ? mockAdminReports.filter(r =>
+    ? mappedReports.filter(r =>
         r.title.toLowerCase().includes(searchText.toLowerCase()) ||
         r.reporterName.toLowerCase().includes(searchText.toLowerCase())
       )
-    : mockAdminReports;
-
-  const { isAuthenticated } = useAuthStore();
+    : mappedReports;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -77,39 +99,49 @@ export const AdminProcedureScreen: React.FC<Props> = ({ navigation }) => {
         {showSearch ? (
           <TextInput
             style={styles.searchInput}
-            placeholder="Tìm kiếm..."
+            placeholder="Tìm kiếm phản ánh TTHC..."
             placeholderTextColor="rgba(255,255,255,0.6)"
             value={searchText}
             onChangeText={setSearchText}
             autoFocus
           />
         ) : (
-          <Text style={styles.appBarTitle}>Phản ánh thủ tục hành chính</Text>
+          <Text style={styles.appBarTitle}>Phản ánh TTHC</Text>
         )}
-        <TouchableOpacity style={styles.iconBtn} onPress={() => { setShowSearch(!showSearch); setSearchText(''); }}>
-          <MaterialCommunityIcons name={showSearch ? 'close' : 'magnify'} size={24} color="#FFFFFF" />
+        <TouchableOpacity
+          onPress={() => {
+            setShowSearch(!showSearch);
+            if (showSearch) setSearchText('');
+          }}
+          style={styles.iconBtn}
+        >
+          <MaterialCommunityIcons
+            name={showSearch ? 'close' : 'magnify'}
+            size={22}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Stats strip */}
+      {/* Stats row */}
       <View style={styles.statsStrip}>
         <View style={styles.statItem}>
-          <Text style={styles.statNum}>{mockAdminReports.filter(r => r.status === 'pending').length}</Text>
-          <Text style={styles.statLabel}>Chờ xử lý</Text>
+          <Text style={styles.statNum}>{mappedReports.filter(r => r.status === 'pending').length}</Text>
+          <Text style={styles.statLabel}>Chờ tiếp nhận</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={[styles.statNum, { color: Colors.statusProcessing }]}>
-            {mockAdminReports.filter(r => r.status === 'processing').length}
+            {mappedReports.filter(r => r.status === 'processing').length}
           </Text>
           <Text style={styles.statLabel}>Đang xử lý</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={[styles.statNum, { color: Colors.statusDone }]}>
-            {mockAdminReports.filter(r => r.status === 'done').length}
+            {mappedReports.filter(r => r.status === 'done').length}
           </Text>
-          <Text style={styles.statLabel}>Đã xử lý</Text>
+          <Text style={styles.statLabel}>Đã tiếp nhận</Text>
         </View>
       </View>
 

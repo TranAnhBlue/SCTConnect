@@ -17,12 +17,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { Colors, Spacing, FontSize, Shadow, BorderRadius } from '../../constants';
 import { AppBar, StatusBadge, CategoryChip } from '../../components/common';
-import { mockFieldReports } from '../../api/mockData/fieldReports';
 import { FieldReport, UbndFeedbackResponse } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { useReportStore } from '../../store/reportStore';
 import { useNotificationStore } from '../../store/notificationStore';
 
+import { feedbackService } from '../../api/feedbackService';
+import { IFeedback } from '../../types/api';
 import * as ImagePicker from 'expo-image-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReportDetail'>;
@@ -30,11 +31,69 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ReportDetail'>;
 export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const id = route?.params?.id || '1';
   const { user, isAuthenticated } = useAuthStore();
-  const isOfficer = isAuthenticated && !!(user?.role && user.role !== 'citizen');
+  const isOfficer = isAuthenticated && (user?.userType === 'officer' || user?.userType === 'admin');
 
-  // Live store report
+  // Live feedback từ API
+  const [liveFeedback, setLiveFeedback] = useState<IFeedback | null>(null);
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+
+  React.useEffect(() => {
+    if (id) {
+      if (isOfficer) {
+        feedbackService.getOfficerFeedbackById(id).then(setLiveFeedback);
+      } else {
+        feedbackService.getMyFeedbackById(id).then(setLiveFeedback);
+      }
+    }
+  }, [id, isOfficer]);
+
+  // Fallback sang store report nếu chưa load xong API
   const fieldReports = useReportStore((state) => state.fieldReports);
-  const report = fieldReports.find((r) => r.id === id) || fieldReports[0];
+  const storeReport = fieldReports.find((r) => r.id === id) || fieldReports[0];
+
+  const report: FieldReport = liveFeedback ? {
+    id: liveFeedback.id,
+    title: liveFeedback.title,
+    description: liveFeedback.content,
+    address: liveFeedback.address || liveFeedback.incidentVillage?.name || 'Cấp Xã',
+    category: 'supervision',
+    status: liveFeedback.status === 'received' ? 'done' : liveFeedback.status === 'rejected' ? 'rejected' : 'pending',
+    imageUrl: liveFeedback.attachments?.[0]?.fileUrl,
+    createdAt: liveFeedback.createdAt,
+    timeAgo: liveFeedback.createdAt ? new Date(liveFeedback.createdAt).toLocaleDateString('vi-VN') : 'Mới',
+    likes: 0,
+    comments: 0,
+    reporterName: liveFeedback.user?.fullName,
+    reporterPhone: liveFeedback.user?.phone,
+    departmentAssigned: liveFeedback.targetOrganization?.name,
+    ubndResponse: liveFeedback.status === 'received' ? {
+      officerName: 'Cán bộ Tiếp nhận',
+      department: liveFeedback.targetOrganization?.name || 'Ủy ban MTTQ Xã',
+      officialContent: 'Phản ánh đã được kiểm tra và tiếp nhận để xử lý theo thẩm quyền.',
+      responseDate: liveFeedback.updatedAt ? new Date(liveFeedback.updatedAt).toLocaleDateString('vi-VN') : 'Đã tiếp nhận',
+    } : undefined,
+  } : storeReport;
+
+  const handleUpdateStatus = async (newStatus: 'received' | 'rejected') => {
+    if (!liveFeedback) return;
+    setIsStatusUpdating(true);
+    try {
+      const updated = await feedbackService.updateStatus(liveFeedback.id, newStatus);
+      if (updated) {
+        setLiveFeedback(updated);
+        Alert.alert(
+          newStatus === 'received' ? '✅ Tiếp nhận thành công' : '❌ Đã từ chối',
+          newStatus === 'received'
+            ? 'Phản ánh đã được đánh dấu Tiếp nhận và chuyển giao đơn vị xử lý.'
+            : 'Đã từ chối tiếp nhận phản ánh này.'
+        );
+      }
+    } catch (e: any) {
+      Alert.alert('Thất bại', e.message || 'Không thể cập nhật trạng thái');
+    } finally {
+      setIsStatusUpdating(false);
+    }
+  };
   
   // Handle case when no reports exist
   if (!report) {
@@ -390,6 +449,53 @@ export const ReportDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 ? 'Đồng chí vui lòng nhấn nút bên dưới để soạn & ban hành Văn bản trả lời Người dân.'
                 : 'Ý kiến của bạn đã được chuyển tới bộ phận chuyên môn. Kết quả & văn bản phản hồi sẽ được cập nhật tại đây.'}
             </Text>
+          </View>
+        )}
+
+        {/* Quick Action Buttons for Officers (Tiếp nhận / Từ chối giống Frontend) */}
+        {isOfficer && report.status === 'pending' && (
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: Spacing.sm }}>
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: '#2E7D32',
+                paddingVertical: 14,
+                borderRadius: BorderRadius.md,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+              onPress={() => handleUpdateStatus('received')}
+              disabled={isStatusUpdating}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name="check-circle-outline" size={18} color="#FFF" />
+              <Text style={{ color: '#FFF', fontWeight: '700', fontSize: FontSize.sm }}>
+                {isStatusUpdating ? 'Đang cập nhật...' : 'Tiếp nhận phản ánh'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: '#D32F2F',
+                paddingVertical: 14,
+                borderRadius: BorderRadius.md,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+              onPress={() => handleUpdateStatus('rejected')}
+              disabled={isStatusUpdating}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name="close-circle-outline" size={18} color="#FFF" />
+              <Text style={{ color: '#FFF', fontWeight: '700', fontSize: FontSize.sm }}>
+                {isStatusUpdating ? 'Đang cập nhật...' : 'Từ chối tiếp nhận'}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 

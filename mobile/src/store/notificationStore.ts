@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { MemberOrganization } from './authStore';
+
+export type MemberOrganization = 'mttq' | 'youth' | 'women' | 'veterans' | 'union' | 'farmers';
 
 export interface AppNotification {
   id: string;
