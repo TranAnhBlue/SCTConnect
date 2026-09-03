@@ -38,7 +38,7 @@ console.log('📡 Mobile connected API Base URL:', API_BASE_URL);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
     'x-system-key': SYSTEM_KEY,
