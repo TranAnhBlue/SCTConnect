@@ -20,6 +20,7 @@ export const CreateOrganizationRequestSchema = z.object({
       OrganizationType.OTHER,
     ])
     .default(OrganizationType.UNION),
+  parentOrganizationId: z.string().uuid().nullable().optional(),
 });
 
 export type CreateOrganizationRequest = z.infer<

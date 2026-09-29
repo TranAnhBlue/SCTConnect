@@ -11,6 +11,7 @@ export const UpdateOrganizationRequestSchema = z.object({
     ])
     .optional(),
   isActive: z.boolean().optional(),
+  parentOrganizationId: z.string().uuid().nullable().optional(),
 });
 
 export type UpdateOrganizationRequest = z.infer<

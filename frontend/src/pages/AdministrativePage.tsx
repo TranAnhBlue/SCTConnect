@@ -138,6 +138,28 @@ const OrgTreeNode: React.FC<{
   );
 };
 
+const buildOrganizationTree = (organizations: IOrganization[]): IOrganization[] => {
+  const nodesById = new Map(
+    organizations.map((organization) => [organization.id, { ...organization, children: [] }]),
+  );
+  const roots: IOrganization[] = [];
+
+  organizations.forEach((organization) => {
+    const node = nodesById.get(organization.id)!;
+    const parent = organization.parentOrganizationId
+      ? nodesById.get(organization.parentOrganizationId)
+      : undefined;
+
+    if (parent) {
+      parent.children!.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  return roots;
+};
+
 // =================================================================
 // 2. MAIN COMPONENT: ADMINISTRATIVE MANAGEMENT PAGE
 // =================================================================
@@ -164,7 +186,7 @@ export const AdministrativePage: React.FC = () => {
   const [categoryModal, setCategoryModal] = useState<{ open: boolean; item?: ICategory | null }>({ open: false });
 
   // Form states
-  const [orgForm, setOrgForm] = useState({ code: '', name: '', type: 'union' as 'fatherland_front' | 'union' | 'other' });
+  const [orgForm, setOrgForm] = useState({ code: '', name: '', type: 'union' as 'fatherland_front' | 'union' | 'other', parentOrganizationId: '' });
   const [villageForm, setVillageForm] = useState({ code: '', name: '' });
   const [categoryForm, setCategoryForm] = useState({ code: '', name: '', description: '' });
 
@@ -181,7 +203,7 @@ export const AdministrativePage: React.FC = () => {
         villageService.getVillages(),
         categoryService.getCategories()
       ]);
-      setOrgTree(treeData);
+      setOrgTree(treeData.length > 0 ? treeData : buildOrganizationTree(flatOrgs));
       setOrganizations(flatOrgs);
       setVillages(vData);
       setCategories(cData);
@@ -198,10 +220,10 @@ export const AdministrativePage: React.FC = () => {
   const handleOpenOrgModal = (item?: IOrganization) => {
     if (item) {
       setOrgModal({ open: true, item });
-      setOrgForm({ code: item.code, name: item.name, type: item.type || 'union' });
+      setOrgForm({ code: item.code, name: item.name, type: item.type || 'union', parentOrganizationId: item.parentOrganizationId || '' });
     } else {
       setOrgModal({ open: true, item: null });
-      setOrgForm({ code: '', name: '', type: 'union' });
+      setOrgForm({ code: '', name: '', type: 'union', parentOrganizationId: '' });
     }
     setModalErr('');
   };
@@ -218,13 +240,15 @@ export const AdministrativePage: React.FC = () => {
       if (orgModal.item) {
         await organizationService.update(orgModal.item.id, {
           name: orgForm.name.trim(),
-          type: orgForm.type
+          type: orgForm.type,
+          parentOrganizationId: orgForm.parentOrganizationId || null,
         });
       } else {
         await organizationService.create({
           code: orgForm.code.trim(),
           name: orgForm.name.trim(),
-          type: orgForm.type
+          type: orgForm.type,
+          parentOrganizationId: orgForm.parentOrganizationId || null,
         });
       }
       setOrgModal({ open: false });
@@ -796,12 +820,39 @@ export const AdministrativePage: React.FC = () => {
                   <label>Loại hình tổ chức</label>
                   <select
                     value={orgForm.type}
-                    onChange={e => setOrgForm(p => ({ ...p, type: e.target.value as any }))}
+                    onChange={e => {
+                      const type = e.target.value as 'fatherland_front' | 'union' | 'other';
+                      setOrgForm(p => ({
+                        ...p,
+                        type,
+                        parentOrganizationId: type === 'fatherland_front' ? '' : p.parentOrganizationId,
+                      }));
+                    }}
                   >
                     <option value="fatherland_front">Mặt trận Tổ quốc</option>
                     <option value="union">Hội / Đoàn thể</option>
                     <option value="other">Khác</option>
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Tổ chức cấp trên</label>
+                  <select
+                    value={orgForm.parentOrganizationId}
+                    disabled={orgForm.type === 'fatherland_front'}
+                    onChange={e => setOrgForm(p => ({ ...p, parentOrganizationId: e.target.value }))}
+                  >
+                    <option value="">Không có (nút gốc)</option>
+                    {organizations
+                      .filter((organization) => organization.id !== orgModal.item?.id)
+                      .map((organization) => (
+                        <option key={organization.id} value={organization.id}>
+                          {organization.name} ({organization.code})
+                        </option>
+                      ))}
+                  </select>
+                  {orgForm.type === 'fatherland_front' && (
+                    <small className="form-hint">Mặt trận Tổ quốc luôn là nút gốc.</small>
+                  )}
                 </div>
               </div>
 

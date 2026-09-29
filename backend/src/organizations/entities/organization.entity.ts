@@ -5,6 +5,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
   Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
@@ -38,6 +40,19 @@ export class Organization {
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
+
+  @Column({ name: 'parent_organization_id', type: 'uuid', nullable: true })
+  parentOrganizationId!: string | null;
+
+  @ManyToOne(() => Organization, (organization) => organization.children, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'parent_organization_id' })
+  parentOrganization!: Organization | null;
+
+  @OneToMany(() => Organization, (organization) => organization.parentOrganization)
+  children!: Organization[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt!: Date;

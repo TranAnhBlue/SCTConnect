@@ -32,12 +32,12 @@ export const organizationService = {
     return [];
   },
 
-  async create(data: { code: string; name: string; type?: string }): Promise<IOrganization> {
+  async create(data: { code: string; name: string; type?: string; parentOrganizationId?: string | null }): Promise<IOrganization> {
     const res = await apiClient.post('/organizations', data);
     return res.data?.data;
   },
 
-  async update(id: string, data: { name?: string; type?: string; isActive?: boolean }): Promise<IOrganization> {
+  async update(id: string, data: { name?: string; type?: string; isActive?: boolean; parentOrganizationId?: string | null }): Promise<IOrganization> {
     const res = await apiClient.patch(`/organizations/${id}`, data);
     return res.data?.data;
   }

@@ -18,6 +18,7 @@ export interface IVillage {
   code: string;
   name: string;
   isActive: boolean;
+  parentOrganizationId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -7,6 +7,7 @@ export interface OrganizationTreeNode {
   name: string;
   type: string;
   isActive: boolean;
+  parentOrganizationId: string | null;
   createdAt: IsoDate;
   updatedAt?: IsoDate;
   children: OrganizationTreeNode[];
@@ -19,6 +20,7 @@ export const OrganizationTreeNodeResponseSchema: z.ZodType<any> = z.lazy(() =>
     name: z.string(),
     type: z.string(),
     isActive: z.boolean(),
+    parentOrganizationId: z.string().uuid().nullable().optional(),
     createdAt: IsoDateSchema,
     updatedAt: IsoDateSchema.optional(),
     children: z.array(OrganizationTreeNodeResponseSchema).default([]),

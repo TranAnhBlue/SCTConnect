@@ -70,7 +70,7 @@ const FeedbackProgress: React.FC<{ feedback: IFeedback }> = ({ feedback }) => {
         shortTitle: 'Từ chối',
         completed: true,
         rejected: true,
-        time: formatProgressDate(feedback.statusUpdatedAt),
+        time: formatProgressDate(feedback.statusUpdatedAt || undefined),
       }
     : {
         title: feedback.status === 'received'
@@ -78,7 +78,7 @@ const FeedbackProgress: React.FC<{ feedback: IFeedback }> = ({ feedback }) => {
           : 'Phản ánh đang chờ bộ phận tiếp nhận',
         shortTitle: feedback.status === 'received' ? 'Tiếp nhận' : 'Chờ tiếp nhận',
         completed: feedback.status === 'received',
-        time: formatProgressDate(feedback.statusUpdatedAt),
+        time: formatProgressDate(feedback.statusUpdatedAt || undefined),
       };
   const responseStage: ProgressStage = {
     title: feedback.responseContent

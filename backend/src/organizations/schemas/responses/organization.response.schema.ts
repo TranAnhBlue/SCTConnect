@@ -7,6 +7,7 @@ export const OrganizationResponseSchema = z.object({
   name: z.string(),
   type: z.string(),
   isActive: z.boolean(),
+  parentOrganizationId: z.string().uuid().nullable().optional(),
   createdAt: IsoDateSchema,
   updatedAt: IsoDateSchema.optional(),
 });
