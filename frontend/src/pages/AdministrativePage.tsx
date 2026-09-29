@@ -394,7 +394,7 @@ export const AdministrativePage: React.FC = () => {
       </div>
 
       {/* Primary Tab Navigation */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20, borderBottom: '1px solid var(--line)', paddingBottom: 12 }}>
+      <div className="admin-section-tabs">
         <button
           type="button"
           className={`tab-btn ${activeTab === 'organizations' ? 'active' : ''}`}
@@ -451,7 +451,7 @@ export const AdministrativePage: React.FC = () => {
           </div>
 
           {activeTab === 'organizations' && (
-            <div style={{ display: 'flex', gap: 4, background: 'var(--paper)', padding: 3, borderRadius: 8 }}>
+            <div className="admin-view-switcher">
               <button
                 type="button"
                 className={`tab-btn ${orgSubView === 'tree' ? 'active' : ''}`}

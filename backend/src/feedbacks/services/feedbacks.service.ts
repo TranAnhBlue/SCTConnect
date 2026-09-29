@@ -12,7 +12,7 @@ import {
   FeedbackStatus,
 } from '../entities/feedback.entity';
 import { FeedbackAttachment } from '../entities/feedback-attachment.entity';
-import { UserType } from '../../users/entities/user.entity';
+import { User, UserType } from '../../users/entities/user.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
 import { Village } from '../../villages/entities/village.entity';
 import { Category } from '../../categories/entities/category.entity';
@@ -46,6 +46,8 @@ export class FeedbacksService implements OnModuleInit {
     private readonly villagesRepository: Repository<Village>,
     @InjectRepository(Category)
     private readonly categoriesRepository: Repository<Category>,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -314,6 +316,38 @@ export class FeedbacksService implements OnModuleInit {
     }
 
     feedback.status = dto.status;
+    feedback.statusUpdatedAt = new Date();
+    await this.feedbacksRepository.save(feedback);
+
+    return this.findOneById(id);
+  }
+
+  async respond(
+    currentUser: AuthenticatedUser,
+    id: string,
+    content: string,
+  ): Promise<FeedbackResponse> {
+    const feedback = await this.feedbacksRepository.findOne({ where: { id } });
+
+    if (!feedback) {
+      throw new NotFoundException('Không tìm thấy phản ánh trong hệ thống');
+    }
+
+    if (!isFatherlandFrontOrAdmin(currentUser) && feedback.targetOrganizationId !== currentUser.organizationId) {
+      throw new ForbiddenException('Bạn không có quyền phản hồi phản ánh của tổ chức khác');
+    }
+
+    if (feedback.status === FeedbackStatus.PENDING) {
+      throw new BadRequestException('Cần tiếp nhận hoặc từ chối phản ánh trước khi phản hồi');
+    }
+
+    const responder = await this.usersRepository.findOne({
+      where: { id: currentUser.id },
+    });
+
+    feedback.responseContent = content;
+    feedback.respondedByName = responder?.fullName || currentUser.phone;
+    feedback.respondedAt = new Date();
     await this.feedbacksRepository.save(feedback);
 
     return this.findOneById(id);

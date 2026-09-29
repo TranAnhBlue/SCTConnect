@@ -43,6 +43,10 @@ export class FeedbackResponseMapper {
       title: feedback.title,
       content: feedback.content,
       status: feedback.status,
+      responseContent: feedback.responseContent,
+      respondedByName: feedback.respondedByName,
+      respondedAt: feedback.respondedAt,
+      statusUpdatedAt: feedback.statusUpdatedAt,
       attachments: (feedback.attachments || []).map((att) => ({
         id: att.id,
         fileUrl: att.fileUrl,

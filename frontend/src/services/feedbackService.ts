@@ -85,6 +85,11 @@ export const feedbackService = {
     return null;
   },
 
+  async respond(id: string, content: string): Promise<IFeedback | null> {
+    const res = await apiClient.patch(`/feedbacks/${id}/response`, { content });
+    return res.data?.data || res.data;
+  },
+
   // Báo cáo thống kê (Admin/MTTQ)
   async getStatistics(filters?: {
     fromDate?: string;

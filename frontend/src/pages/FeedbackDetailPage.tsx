@@ -17,7 +17,11 @@ import {
   Clock,
   XCircle,
   Hourglass,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Send,
+  Check,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const STATUS_CONFIG: Record<FeedbackStatus, { label: string; badgeClass: string; icon: React.ReactNode }> = {
@@ -38,6 +42,94 @@ const STATUS_CONFIG: Record<FeedbackStatus, { label: string; badgeClass: string;
   }
 };
 
+type ProgressStage = {
+  title: string;
+  shortTitle: string;
+  completed: boolean;
+  rejected?: boolean;
+  time?: string;
+};
+
+const formatProgressDate = (value?: string) => value
+  ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
+  : undefined;
+
+const FeedbackProgress: React.FC<{ feedback: IFeedback }> = ({ feedback }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const submittedStage: ProgressStage = {
+    title: feedback.user?.fullName
+      ? `${feedback.user.fullName} đã gửi phản ánh`
+      : 'Đã gửi phản ánh',
+    shortTitle: 'Đã gửi',
+    completed: true,
+    time: formatProgressDate(feedback.createdAt),
+  };
+  const decisionStage: ProgressStage = feedback.status === 'rejected'
+    ? {
+        title: 'Bộ phận tiếp nhận đã từ chối phản ánh',
+        shortTitle: 'Từ chối',
+        completed: true,
+        rejected: true,
+        time: formatProgressDate(feedback.statusUpdatedAt),
+      }
+    : {
+        title: feedback.status === 'received'
+          ? 'Bộ phận tiếp nhận đã tiếp nhận phản ánh'
+          : 'Phản ánh đang chờ bộ phận tiếp nhận',
+        shortTitle: feedback.status === 'received' ? 'Tiếp nhận' : 'Chờ tiếp nhận',
+        completed: feedback.status === 'received',
+        time: formatProgressDate(feedback.statusUpdatedAt),
+      };
+  const responseStage: ProgressStage = {
+    title: feedback.responseContent
+      ? 'Cơ quan tiếp nhận đã phản hồi'
+      : 'Đang chờ phản hồi kết quả',
+    shortTitle: 'Phản hồi',
+    completed: Boolean(feedback.responseContent),
+    time: formatProgressDate(feedback.respondedAt || undefined),
+  };
+  const stages: ProgressStage[] = [submittedStage, decisionStage, responseStage];
+  const currentStageIndex = feedback.responseContent
+    ? 2
+    : feedback.status === 'pending'
+      ? 1
+      : 2;
+  const timelineStages = [...stages].reverse();
+
+  return (
+    <section className="reception-progress-card feedback-detail-progress">
+      <div className="reception-progress-top">
+        <div>
+          <p className={`reception-status ${feedback.status}`}><strong>{feedback.status === 'pending' ? 'Phản ánh đang chờ tiếp nhận' : feedback.status === 'received' ? 'Phản ánh đã được tiếp nhận' : 'Phản ánh chưa được tiếp nhận'}</strong></p>
+          <h3>Tiến trình xử lý phản ánh</h3>
+        </div>
+      </div>
+      <div className="reception-stage-bar" aria-label="Tiến trình xử lý phản ánh">
+        {stages.map((stage, index) => {
+          const state = stage.rejected ? 'rejected' : stage.completed ? 'completed' : index === currentStageIndex ? 'current' : '';
+          return <div className="reception-stage" key={stage.title}>
+            <div className={`reception-stage-line ${index < currentStageIndex ? 'completed' : ''}`} />
+            <span className={`reception-stage-icon ${state}`}>{stage.completed && !stage.rejected ? <Check size={13} strokeWidth={3} /> : index + 1}</span>
+            <span className="reception-stage-label">{stage.shortTitle}</span>
+          </div>;
+        })}
+      </div>
+      <div className="reception-timeline-panel">
+        <button type="button" className="reception-timeline-toggle" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen}>
+          <span>Chi tiết tiến trình xử lý</span>
+          {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </button>
+        {isOpen && <ol className="reception-timeline">
+          {timelineStages.map((stage, index) => <li key={stage.title} className={stage.rejected ? 'rejected' : stage.completed ? 'completed' : ''}>
+            <span className="reception-timeline-dot" />
+            <div>{index === 0 && (stage.completed || stage.rejected) && <span className="reception-latest-badge">● Mới nhất</span>}<p>{stage.title}</p><time>{stage.time || 'Chưa có thời gian'}</time></div>
+          </li>)}
+        </ol>}
+      </div>
+    </section>
+  );
+};
+
 export const FeedbackDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -47,10 +139,16 @@ export const FeedbackDetailPage: React.FC = () => {
   const [feedback, setFeedback] = useState<IFeedback | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [responseContent, setResponseContent] = useState('');
+  const [responseLoading, setResponseLoading] = useState(false);
 
   useEffect(() => {
     if (id) loadFeedback(id);
   }, [id]);
+
+  useEffect(() => {
+    setResponseContent(feedback?.responseContent || '');
+  }, [feedback?.id, feedback?.responseContent]);
 
   const loadFeedback = async (feedbackId: string) => {
     setLoading(true);
@@ -80,6 +178,25 @@ export const FeedbackDetailPage: React.FC = () => {
       message.error(e?.response?.data?.message || `Không thể ${label} phản ánh`);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleRespond = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!feedback || !responseContent.trim()) return;
+
+    setResponseLoading(true);
+    try {
+      const updated = await feedbackService.respond(feedback.id, responseContent.trim());
+      if (updated) {
+        setFeedback(updated);
+        setResponseContent(updated.responseContent || '');
+        message.success('Đã gửi phản hồi đến công dân');
+      }
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Không thể gửi phản hồi');
+    } finally {
+      setResponseLoading(false);
     }
   };
 
@@ -170,9 +287,11 @@ export const FeedbackDetailPage: React.FC = () => {
             )}
           </div>
 
+          <FeedbackProgress feedback={feedback} />
+
           {/* Status Banner for Citizen */}
           {isCitizen && (
-            <div className={`detail-card ${feedback.status === 'received' ? 'response-card' : ''}`}
+            <div className={`detail-card citizen-status-banner ${feedback.status === 'received' ? 'response-card' : ''}`}
               style={{ background: feedback.status === 'received' ? 'var(--success-soft)' : feedback.status === 'rejected' ? 'var(--neutral-soft, #f5f5f5)' : undefined }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ fontSize: 32 }}>
@@ -195,6 +314,19 @@ export const FeedbackDetailPage: React.FC = () => {
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {isCitizen && feedback.responseContent && (
+            <div className="detail-card feedback-response-card">
+              <div className="feedback-response-card-header">
+                <Send size={18} />
+                <div>
+                  <h3>Phản hồi từ cơ quan tiếp nhận</h3>
+                  {feedback.respondedAt && <small>{new Date(feedback.respondedAt).toLocaleString('vi-VN')}</small>}
+                </div>
+              </div>
+              <p>{feedback.responseContent}</p>
             </div>
           )}
 
@@ -242,12 +374,40 @@ export const FeedbackDetailPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          {!isCitizen && feedback.status !== 'pending' && (
+            <form className="detail-card feedback-response-form" onSubmit={handleRespond}>
+              <div className="feedback-response-card-header">
+                <Send size={18} />
+                <div>
+                  <h3>{feedback.responseContent ? 'Cập nhật phản hồi' : 'Phản hồi đến công dân'}</h3>
+                  <small>Phản hồi sẽ hiển thị trong chi tiết phản ánh của công dân.</small>
+                </div>
+              </div>
+              <textarea
+                value={responseContent}
+                onChange={(event) => setResponseContent(event.target.value)}
+                minLength={5}
+                maxLength={5000}
+                required
+                placeholder="Nhập nội dung phản hồi, hướng dẫn hoặc kết quả xử lý..."
+              />
+              <div className="feedback-response-actions">
+                <span>{responseContent.length}/5000 ký tự</span>
+                <button type="submit" className="cta-btn" disabled={responseLoading}>
+                  <Send size={15} /> {responseLoading ? 'Đang gửi...' : feedback.responseContent ? 'Cập nhật phản hồi' : 'Gửi phản hồi'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* Right: Sidebar Info */}
         <div className="detail-sidebar-col">
+          {!isCitizen && (
+          <>
           {/* Status Timeline */}
-          <div className="detail-card">
+          <div className="detail-card officer-status-timeline">
             <h3>Trạng thái phản ánh</h3>
             <div className="history-timeline">
               {/* Step 1: Submitted */}
@@ -290,6 +450,8 @@ export const FeedbackDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
+          </>
+          )}
 
           {/* Metadata Card */}
           <div className="detail-card">

@@ -79,6 +79,18 @@ export class Feedback {
   })
   status!: FeedbackStatus | string;
 
+  @Column({ name: 'response_content', type: 'text', nullable: true })
+  responseContent!: string | null;
+
+  @Column({ name: 'responded_by_name', type: 'varchar', length: 255, nullable: true })
+  respondedByName!: string | null;
+
+  @Column({ name: 'responded_at', type: 'timestamp with time zone', nullable: true })
+  respondedAt!: Date | null;
+
+  @Column({ name: 'status_updated_at', type: 'timestamp with time zone', nullable: true })
+  statusUpdatedAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt!: Date;
 

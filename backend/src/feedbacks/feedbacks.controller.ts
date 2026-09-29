@@ -20,6 +20,7 @@ import {
   CreateFeedbackRequestDTO,
   QueryFeedbacksRequestDTO,
   UpdateFeedbackStatusRequestDTO,
+  RespondFeedbackRequestDTO,
   QueryFeedbackStatisticsRequestDTO,
   FeedbackResponseDTO,
   PaginatedFeedbacksResponseDTO,
@@ -171,5 +172,22 @@ export class FeedbacksController {
     @Body() dto: UpdateFeedbackStatusRequestDTO,
   ): Promise<FeedbackResponse> {
     return this.feedbacksService.updateStatus(currentUser, id, dto);
+  }
+
+  @Patch(':id/response')
+  @Roles(UserType.OFFICER, UserType.ADMIN)
+  @ApiOperation({ summary: 'Cán bộ phản hồi phản ánh đến công dân' })
+  @ApiParam({ name: 'id', description: 'UUID phản ánh' })
+  @ApiSuccessResponse(
+    FeedbackResponseDTO,
+    FeedbackResponseSchema,
+    'Gửi phản hồi thành công',
+  )
+  async respond(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RespondFeedbackRequestDTO,
+  ): Promise<FeedbackResponse> {
+    return this.feedbacksService.respond(currentUser, id, dto.content);
   }
 }

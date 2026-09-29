@@ -90,6 +90,10 @@ export interface IFeedback {
   title: string;
   content: string;
   status: FeedbackStatus;
+  responseContent?: string | null;
+  respondedByName?: string | null;
+  respondedAt?: string | null;
+  statusUpdatedAt?: string | null;
   attachments: IFeedbackAttachment[];
   createdAt: string;
   updatedAt?: string;

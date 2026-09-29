@@ -5,6 +5,7 @@ import { FeedbackAttachment } from './entities/feedback-attachment.entity';
 import { Organization } from '../organizations/entities/organization.entity';
 import { Village } from '../villages/entities/village.entity';
 import { Category } from '../categories/entities/category.entity';
+import { User } from '../users/entities/user.entity';
 import { FeedbacksService } from './services/feedbacks.service';
 import { FeedbacksStatisticsService } from './services/feedbacks-statistics.service';
 import { FeedbacksController } from './feedbacks.controller';
@@ -17,6 +18,7 @@ import { FeedbacksController } from './feedbacks.controller';
       Organization,
       Village,
       Category,
+      User,
     ]),
   ],
   controllers: [FeedbacksController],
