@@ -18,7 +18,6 @@ export interface IVillage {
   code: string;
   name: string;
   isActive: boolean;
-  parentOrganizationId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -29,6 +28,7 @@ export interface IOrganization {
   name: string;
   type: 'fatherland_front' | 'union' | 'other';
   isActive: boolean;
+  parentOrganizationId?: string | null;
   createdAt?: string;
   updatedAt?: string;
   children?: IOrganization[];

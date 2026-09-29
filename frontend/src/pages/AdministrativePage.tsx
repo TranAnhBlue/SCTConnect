@@ -139,8 +139,11 @@ const OrgTreeNode: React.FC<{
 };
 
 const buildOrganizationTree = (organizations: IOrganization[]): IOrganization[] => {
-  const nodesById = new Map(
-    organizations.map((organization) => [organization.id, { ...organization, children: [] }]),
+  const nodesById = new Map<string, IOrganization>(
+    organizations.map((organization) => [
+      organization.id,
+      { ...organization, children: [] as IOrganization[] },
+    ]),
   );
   const roots: IOrganization[] = [];
 
